@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault Admin — Manage Videos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#08090d; --surface:#0f1117; --panel:#141720; --border:rgba(255,255,255,0.07);
+      --accent:#f59e0b; --danger:#ef4444; --success:#22c55e; --info:#38bdf8;
+      --text:#e8eaf0; --muted:#6b7280;
+      --font-head:'Syne',sans-serif; --font-body:'IBM Plex Sans',sans-serif;
+      --font-mono:'IBM Plex Mono',monospace; --sidebar-w:230px; --nav-h:60px;
+    }
+    html, body { height: 100%; }
+    body { background:var(--bg); color:var(--text); font-family:var(--font-body); display:flex; flex-direction:column; }
+
+    /* TOPBAR */
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:200; height:var(--nav-h); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; }
+    .wordmark { font-family:var(--font-head); font-size:1.15rem; font-weight:800; letter-spacing:0.06em; background:linear-gradient(135deg,var(--accent),#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .topbar-divider { width:1px; height:20px; background:var(--border); }
+    .topbar-label { font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; }
+    .topbar-left { display:flex; align-items:center; gap:20px; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .admin-pill { display:flex; align-items:center; gap:7px; background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:5px 14px 5px 8px; font-size:0.8rem; color:var(--muted); }
+    .admin-avatar { width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#c97c08); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:var(--bg); }
+    .btn-logout { display:flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; color:var(--danger); font-size:0.78rem; font-weight:500; text-decoration:none; transition:all 0.2s; }
+    .btn-logout:hover { background:rgba(239,68,68,0.2); border-color:var(--danger); }
+
+    /* LAYOUT */
+    .layout { display:flex; margin-top:var(--nav-h); min-height:calc(100vh - var(--nav-h)); }
+
+    /* SIDEBAR */
+    .sidebar { position:fixed; top:var(--nav-h); left:0; width:var(--sidebar-w); height:calc(100vh - var(--nav-h)); background:var(--surface); border-right:1px solid var(--border); padding:28px 0; display:flex; flex-direction:column; overflow-y:auto; }
+    .sidebar-section-label { font-family:var(--font-mono); font-size:0.62rem; letter-spacing:0.18em; color:var(--muted); text-transform:uppercase; padding:0 20px 8px; }
+    .sidebar-nav { list-style:none; margin-bottom:28px; }
+    .sidebar-nav li a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; font-size:0.85rem; font-weight:500; border-left:2px solid transparent; transition:all 0.18s; }
+    .sidebar-nav li a:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+    .sidebar-nav li a.active { color:var(--accent); border-left-color:var(--accent); background:rgba(245,158,11,0.06); }
+    .nav-icon { width:16px; height:16px; opacity:0.7; flex-shrink:0; }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar-w); flex:1; padding:36px 40px; }
+    .page-head { margin-bottom:28px; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    .page-head h1 { font-family:var(--font-head); font-size:2rem; font-weight:800; letter-spacing:0.03em; }
+    .btn-add { display:inline-flex; align-items:center; gap:8px; padding:9px 20px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); border-radius:8px; color:var(--accent); font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.2s; }
+    .btn-add:hover { background:rgba(245,158,11,0.25); transform:translateY(-1px); }
+
+    /* FLASH MESSAGES */
+    .flash { padding:10px 16px; border-radius:8px; font-size:0.85rem; font-weight:500; margin-bottom:16px; }
+    .flash.success { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:#86efac; }
+    .flash.error   { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; }
+
+    /* SEARCH + FILTER BAR */
+    .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+    .search-box { flex:1; min-width:200px; position:relative; }
+    .search-box input { width:100%; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:9px 12px 9px 36px; color:var(--text); font-family:var(--font-body); font-size:0.85rem; outline:none; transition:border-color 0.2s; }
+    .search-box input:focus { border-color:var(--accent); }
+    .search-box input::placeholder { color:var(--muted); }
+    .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:0.9rem; pointer-events:none; }
+    .filter-select { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:9px 14px; color:var(--text); font-family:var(--font-body); font-size:0.85rem; outline:none; cursor:pointer; transition:border-color 0.2s; }
+    .filter-select:focus { border-color:var(--accent); }
+    .video-count { font-family:var(--font-mono); font-size:0.75rem; color:var(--muted); white-space:nowrap; }
+
+    /* VIDEO TABLE */
+    .table-wrap { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .data-table { width:100%; border-collapse:collapse; }
+    .data-table thead th { font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); padding:12px 16px; text-align:left; border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; }
+    .data-table tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
+    .data-table tbody tr:last-child { border-bottom:none; }
+    .data-table tbody tr:hover { background:rgba(255,255,255,0.02); }
+    .data-table tbody td { padding:14px 16px; font-size:0.85rem; vertical-align:middle; }
+
+    /* Thumbnail */
+    .thumb-cell { display:flex; align-items:center; gap:12px; }
+    .thumb { width:60px; height:40px; object-fit:cover; border-radius:6px; background:var(--surface); border:1px solid var(--border); flex-shrink:0; }
+    .thumb-placeholder { width:60px; height:40px; border-radius:6px; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+    .video-title { font-weight:600; color:var(--text); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .video-desc { font-size:0.75rem; color:var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; }
+
+    /* Category badge */
+    .cat-badge { display:inline-block; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); color:var(--info); border-radius:50px; padding:3px 10px; font-size:0.72rem; font-weight:600; white-space:nowrap; }
+
+    /* Plan badges */
+    .plan-badge { display:inline-flex; align-items:center; gap:5px; border-radius:50px; padding:4px 11px; font-size:0.72rem; font-weight:700; letter-spacing:0.05em; white-space:nowrap; }
+    .plan-free     { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:#4ade80; }
+    .plan-standard { background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.3); color:#60a5fa; }
+    .plan-premium  { background:rgba(244,162,97,0.12); border:1px solid rgba(244,162,97,0.3); color:#f4a261; }
+
+    /* Inline plan change form */
+    .plan-form { display:flex; align-items:center; gap:8px; }
+    .plan-select { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:5px 10px; color:var(--text); font-family:var(--font-mono); font-size:0.75rem; outline:none; cursor:pointer; transition:border-color 0.2s; }
+    .plan-select:focus { border-color:var(--accent); }
+    .btn-save { padding:5px 12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); border-radius:6px; color:var(--accent); font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:var(--font-body); }
+    .btn-save:hover { background:rgba(245,158,11,0.3); }
+
+    /* Delete button */
+    .btn-delete { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; color:var(--danger); font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.2s; text-decoration:none; font-family:var(--font-body); }
+    .btn-delete:hover { background:rgba(239,68,68,0.22); border-color:var(--danger); transform:translateY(-1px); }
+
+    /* Date */
+    .date-cell { font-family:var(--font-mono); font-size:0.75rem; color:var(--muted); }
+
+    /* Empty state */
+    .empty-state { text-align:center; padding:60px 24px; color:var(--muted); }
+    .empty-state h3 { font-family:var(--font-head); font-size:1.5rem; margin-bottom:8px; color:var(--text); }
+
+    /* Delete confirm modal */
+    #del-modal { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.85); backdrop-filter:blur(16px); }
+    .del-inner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .del-card { background:var(--panel); border:1px solid rgba(239,68,68,0.35); border-radius:16px; padding:36px 32px; max-width:400px; width:100%; text-align:center; box-shadow:0 30px 60px rgba(0,0,0,0.7); }
+    .del-card .del-icon { font-size:2.5rem; margin-bottom:14px; }
+    .del-card h3 { font-family:var(--font-head); font-size:1.6rem; letter-spacing:0.04em; margin-bottom:8px; }
+    .del-card p { font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:28px; }
+    .del-card p strong { color:var(--text); }
+    .del-actions { display:flex; gap:10px; justify-content:center; }
+    .btn-confirm-del { padding:11px 28px; background:var(--danger); border:none; border-radius:8px; color:#fff; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.2s; text-decoration:none; font-family:var(--font-body); }
+    .btn-confirm-del:hover { background:#dc2626; transform:translateY(-1px); box-shadow:0 6px 20px rgba(239,68,68,0.4); }
+    .btn-cancel { padding:11px 24px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:0.9rem; cursor:pointer; transition:all 0.2s; font-family:var(--font-body); }
+    .btn-cancel:hover { color:var(--text); background:rgba(255,255,255,0.06); }
+
+    @media (max-width:900px) { .sidebar{display:none;} .main{margin-left:0; padding:24px 16px;} }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="wordmark">StreamVault</div>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">Admin Panel</span>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-pill">
+        <div class="admin-avatar">{{ user.username|first|upper }}</div>
+        {{ user.username }}
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <p class="sidebar-section-label">Navigation</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="/admin-dashboard/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-users/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>Manage Users
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-videos/" class="active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16"/>
+            </svg>Manage Videos
+          </a>
+        </li>
+        <li>
+          <a href="/admin-plans/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>Plan Management
+          </a>
+        </li>
+        <li>
+          <a href="/admin-category/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 6h16M4 12h16M4 18h10"/>
+            </svg>Categories
+          </a>
+        </li>
+      </ul>
+      <p class="sidebar-section-label">System</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/>
+            </svg>
+            View Site
+          </a>
+        </li>
+         <li>
+          <a href="/logout/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+            Logout
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="page-head">
+        <h1>Manage Videos</h1>
+        <a href="/admin-add-video/" class="btn-add">＋ Upload New Video</a>
+      </div>
+
+      <!-- Flash messages -->
+      {% if messages %}
+        {% for msg in messages %}
+          <div class="flash {{ msg.tags }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search by title or category…"/>
+        </div>
+        <select class="filter-select" id="planFilter">
+          <option value="">All Plans</option>
+          <option value="free">Free</option>
+          <option value="standard">Standard</option>
+          <option value="premium">Premium</option>
+        </select>
+        <select class="filter-select" id="catFilter">
+          <option value="">All Categories</option>
+          {% for c in categories %}
+            <option value="{{ c.name|lower }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <span class="video-count" id="videoCount">{{ videos|length }} video{{ videos|length|pluralize }}</span>
+      </div>
+
+      <!-- Table -->
+      {% if videos %}
+      <div class="table-wrap">
+        <table class="data-table" id="videoTable">
+          <thead>
+            <tr>
+              <th>Video</th>
+              <th>Category</th>
+              <th>Plan</th>
+              <th>Change Plan</th>
+              <th>Uploaded</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in videos %}
+            <tr data-title="{{ v.title|lower }}" data-plan="{{ v.required_plan }}" data-cat="{{ v.category.name|lower }}">
+
+              <!-- Thumbnail + title -->
+              <td>
+                <div class="thumb-cell">
+                  {% if v.thumbnail %}
+                    <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}" class="thumb"/>
+                  {% else %}
+                    <div class="thumb-placeholder">🎬</div>
+                  {% endif %}
+                  <div>
+                    <div class="video-title" title="{{ v.title }}">{{ v.title }}</div>
+                    <div class="video-desc" title="{{ v.description }}">{{ v.description|truncatewords:8 }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Category -->
+              <td><span class="cat-badge">{{ v.category.name }}</span></td>
+
+              <!-- Current plan badge -->
+              <td>
+                {% if v.required_plan == 'free' %}
+                  <span class="plan-badge plan-free">🎬 Free</span>
+                {% elif v.required_plan == 'standard' %}
+                  <span class="plan-badge plan-standard">🚀 Standard</span>
+                {% else %}
+                  <span class="plan-badge plan-premium">👑 Premium</span>
+                {% endif %}
+              </td>
+
+              <!-- Inline plan change -->
+              <td>
+                <form method="post" action="/admin-update-video-plan/{{ v.id }}/" class="plan-form">
+                  {% csrf_token %}
+                  <select name="required_plan" class="plan-select">
+                    <option value="free"     {% if v.required_plan == 'free' %}selected{% endif %}>Free</option>
+                    <option value="standard" {% if v.required_plan == 'standard' %}selected{% endif %}>Standard</option>
+                    <option value="premium"  {% if v.required_plan == 'premium' %}selected{% endif %}>Premium</option>
+                  </select>
+                  <button type="submit" class="btn-save">Save</button>
+                </form>
+              </td>
+
+              <!-- Uploaded date -->
+              <td class="date-cell">{{ v.created_at|date:"d M Y" }}</td>
+
+              <!-- Delete -->
+              <td>
+                <button class="btn-delete"
+                  onclick="confirmDelete('{{ v.id }}','{{ v.title|escapejs }}')">
+                  🗑 Delete
+                </button>
+              </td>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty-state">
+          <h3>No videos yet</h3>
+          <p>Upload your first video to get started.</p>
+          <a href="/admin-add-video/" style="color:var(--accent);text-decoration:none;font-weight:600;">→ Upload Video</a>
+        </div>
+      {% endif %}
+
+    </main>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div id="del-modal">
+    <div class="del-inner">
+      <div class="del-card">
+        <div class="del-icon">🗑️</div>
+        <h3>Delete Video?</h3>
+        <p>You're about to permanently delete <strong id="del-title"></strong>. This cannot be undone.</p>
+        <div class="del-actions">
+          <a href="#" id="del-confirm-btn" class="btn-confirm-del">Yes, Delete</a>
+          <button class="btn-cancel" onclick="document.getElementById('del-modal').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Delete modal
+    function confirmDelete(id, title) {
+      document.getElementById('del-title').textContent = '"' + title + '"';
+      document.getElementById('del-confirm-btn').href = '/admin-delete-video/' + id + '/';
+      document.getElementById('del-modal').style.display = 'block';
+    }
+    document.getElementById('del-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.getElementById('del-modal').style.display = 'none';
+    });
+
+    // Live search + filter
+    const searchInput  = document.getElementById('searchInput');
+    const planFilter   = document.getElementById('planFilter');
+    const catFilter    = document.getElementById('catFilter');
+    const rows         = document.querySelectorAll('#videoTable tbody tr');
+    const countEl      = document.getElementById('videoCount');
+
+    function applyFilters() {
+      const q    = searchInput.value.toLowerCase();
+      const plan = planFilter.value;
+      const cat  = catFilter.value;
+      let visible = 0;
+      rows.forEach(row => {
+        const titleMatch = row.dataset.title.includes(q);
+        const planMatch  = !plan || row.dataset.plan === plan;
+        const catMatch   = !cat  || row.dataset.cat  === cat;
+        const show = titleMatch && planMatch && catMatch;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      countEl.textContent = visible + ' video' + (visible !== 1 ? 's' : '');
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    planFilter.addEventListener('change', applyFilters);
+    catFilter.addEventListener('change', applyFilters);
+  </script>
+
+</body>
+</html>

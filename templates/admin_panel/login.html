@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault Admin — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── RESET ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #08090d;
+      --surface:  #0f1117;
+      --panel:    #141720;
+      --border:   rgba(255,255,255,0.07);
+      --accent:   #f59e0b;
+      --accent2:  #fbbf24;
+      --danger:   #ef4444;
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --font-head:'Syne', sans-serif;
+      --font-body:'IBM Plex Sans', sans-serif;
+      --font-mono:'IBM Plex Mono', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── LEFT PANEL — brand/identity side ───────────────── */
+    .brand-panel {
+      flex: 1;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 56px;
+      background:
+        linear-gradient(135deg, rgba(245,158,11,0.06) 0%, transparent 60%),
+        var(--surface);
+      border-right: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+
+    /* Decorative geometric grid lines on the brand panel */
+    .brand-panel::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(245,158,11,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,158,11,0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* A large decorative circle for visual weight */
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      border: 1px solid rgba(245,158,11,0.08);
+      bottom: -150px; left: -100px;
+      pointer-events: none;
+    }
+
+    .brand-logo {
+      position: relative; z-index: 1;
+    }
+
+    .brand-logo .wordmark {
+      font-family: var(--font-head);
+      font-size: 1.6rem; font-weight: 800;
+      letter-spacing: 0.06em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-logo .tag {
+      font-family: var(--font-mono);
+      font-size: 0.68rem; letter-spacing: 0.18em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .brand-center { position: relative; z-index: 1; }
+
+    .brand-center h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2.4rem, 4vw, 3.4rem);
+      font-weight: 800; line-height: 1.05;
+      margin-bottom: 16px;
+    }
+
+    /* The amber underline accent on one word */
+    .brand-center h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .brand-center p {
+      font-size: 0.9rem; color: var(--muted);
+      line-height: 1.7; max-width: 340px;
+    }
+
+    /* Small stat chips at the bottom of the brand panel */
+    .brand-stats {
+      display: flex; gap: 24px;
+      position: relative; z-index: 1;
+    }
+
+    .stat-chip {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+
+    .stat-chip .num {
+      font-family: var(--font-mono);
+      font-size: 1.2rem; font-weight: 500;
+      color: var(--accent2);
+    }
+
+    .stat-chip .label {
+      font-size: 0.72rem; letter-spacing: 0.1em;
+      color: var(--muted); text-transform: uppercase;
+    }
+
+    /* ── RIGHT PANEL — login form ────────────────────────── */
+    .form-panel {
+      width: 420px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding: 56px 48px;
+      background: var(--bg);
+    }
+
+    .form-panel h2 {
+      font-family: var(--font-head);
+      font-size: 1.8rem; font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .form-panel .subtitle {
+      font-size: 0.82rem; color: var(--muted);
+      margin-bottom: 40px;
+      font-family: var(--font-mono);
+    }
+
+    /* Top amber rule */
+    .form-rule {
+      width: 40px; height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin-bottom: 32px;
+    }
+
+    /* Field styles */
+    .field { margin-bottom: 20px; }
+
+    .field label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem; letter-spacing: 0.14em;
+      color: var(--muted); text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .field input::placeholder { color: var(--muted); }
+
+    .field input:focus {
+      border-color: var(--accent);
+      background: rgba(245,158,11,0.04);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%; padding: 13px;
+      margin-top: 8px;
+      background: var(--accent);
+      color: #08090d;   /* dark text on amber for contrast */
+      font-family: var(--font-head);
+      font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.08em;
+      border: none; border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(245,158,11,0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: var(--accent2);
+      box-shadow: 0 6px 32px rgba(245,158,11,0.45);
+      transform: translateY(-2px);
+    }
+
+    .btn-submit:active { transform: translateY(0); }
+
+    /* Back to site link */
+    .back-link {
+      margin-top: 28px; text-align: center;
+      font-size: 0.8rem; color: var(--muted);
+    }
+
+    .back-link a {
+      color: var(--accent);
+      text-decoration: none; font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .back-link a:hover { color: var(--accent2); }
+
+    /* Security badge */
+    .security-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem; letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .security-badge::before {
+      content: '🔒';
+      font-size: 0.7rem;
+    }
+
+    /* Hide brand panel on small screens */
+    @media (max-width: 768px) {
+      .brand-panel { display: none; }
+      .form-panel { width: 100%; padding: 40px 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT: Brand identity panel -->
+  <div class="brand-panel">
+    <div class="brand-logo">
+      <div class="wordmark">StreamVault</div>
+      <div class="tag">Control Center v2.0</div>
+    </div>
+
+    <div class="brand-center">
+      <h1>Admin<br><em>Command</em><br>Panel</h1>
+      <p>Manage your OTT platform — upload content, organise categories, and monitor users from one secure dashboard.</p>
+    </div>
+
+    <div class="brand-stats">
+      <div class="stat-chip">
+        <span class="num">{{ videos|default:"—" }}</span>
+        <span class="label">Videos</span>
+      </div>
+      <div class="stat-chip">
+        <span class="num">{{ categories|default:"—" }}</span>
+        <span class="label">Categories</span>
+      </div>
+      <div class="stat-chip">
+        <span class="num">{{ users|default:"—" }}</span>
+        <span class="label">Users</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Login form -->
+  <div class="form-panel">
+    <div class="form-rule"></div>
+    <h2>Sign In</h2>
+    <p class="subtitle">// admin access only</p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text"
+               placeholder="admin_username" autocomplete="username" required/>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password"
+               placeholder="••••••••••" autocomplete="current-password" required/>
+      </div>
+
+      <button type="submit" class="btn-submit">ACCESS DASHBOARD</button>
+    </form>
+
+    <div class="back-link">
+      <a href="/">← Back to StreamVault</a>
+    </div>
+
+    <div class="security-badge">SECURED ADMIN AREA</div>
+  </div>
+
+</body>
+</html>

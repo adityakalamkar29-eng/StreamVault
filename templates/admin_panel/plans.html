@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault Admin — Plan Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#08090d; --surface:#0f1117; --panel:#141720; --border:rgba(255,255,255,0.07);
+      --accent:#f59e0b; --danger:#ef4444; --success:#22c55e; --info:#38bdf8;
+      --text:#e8eaf0; --muted:#6b7280;
+      --free:#4ade80; --standard:#60a5fa; --premium:#f4a261;
+      --font-head:'Syne',sans-serif; --font-body:'IBM Plex Sans',sans-serif;
+      --font-mono:'IBM Plex Mono',monospace; --sidebar-w:230px; --nav-h:60px;
+    }
+    html, body { height: 100%; }
+    body { background:var(--bg); color:var(--text); font-family:var(--font-body); display:flex; flex-direction:column; }
+
+    /* TOPBAR */
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:200; height:var(--nav-h); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; }
+    .topbar-left { display:flex; align-items:center; gap:20px; }
+    .wordmark { font-family:var(--font-head); font-size:1.15rem; font-weight:800; letter-spacing:0.06em; background:linear-gradient(135deg,var(--accent),#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .topbar-divider { width:1px; height:20px; background:var(--border); }
+    .topbar-label { font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .admin-pill { display:flex; align-items:center; gap:7px; background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:5px 14px 5px 8px; font-size:0.8rem; color:var(--muted); }
+    .admin-avatar { width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#c97c08); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:var(--bg); }
+    .btn-logout { display:flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; color:var(--danger); font-size:0.78rem; font-weight:500; text-decoration:none; transition:all 0.2s; }
+    .btn-logout:hover { background:rgba(239,68,68,0.2); border-color:var(--danger); }
+
+    /* LAYOUT */
+    .layout { display:flex; margin-top:var(--nav-h); min-height:calc(100vh - var(--nav-h)); }
+
+    /* SIDEBAR */
+    .sidebar { position:fixed; top:var(--nav-h); left:0; width:var(--sidebar-w); height:calc(100vh - var(--nav-h)); background:var(--surface); border-right:1px solid var(--border); padding:28px 0; display:flex; flex-direction:column; overflow-y:auto; }
+    .sidebar-section-label { font-family:var(--font-mono); font-size:0.62rem; letter-spacing:0.18em; color:var(--muted); text-transform:uppercase; padding:0 20px 8px; }
+    .sidebar-nav { list-style:none; margin-bottom:28px; }
+    .sidebar-nav li a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; font-size:0.85rem; font-weight:500; border-left:2px solid transparent; transition:all 0.18s; }
+    .sidebar-nav li a:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+    .sidebar-nav li a.active { color:var(--accent); border-left-color:var(--accent); background:rgba(245,158,11,0.06); }
+    .nav-icon { width:16px; height:16px; opacity:0.7; flex-shrink:0; }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar-w); flex:1; padding:36px 40px; }
+    .page-head { margin-bottom:8px; }
+    .page-head h1 { font-family:var(--font-head); font-size:2rem; font-weight:800; letter-spacing:0.03em; }
+    .page-subhead { font-size:0.85rem; color:var(--muted); margin-bottom:32px; }
+
+    /* FLASH */
+    .flash { padding:10px 16px; border-radius:8px; font-size:0.85rem; font-weight:500; margin-bottom:20px; }
+    .flash.success { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:#86efac; }
+    .flash.error   { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; }
+
+    /* PLAN CARDS GRID */
+    .plans-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:24px; }
+
+    .plan-card { background:var(--panel); border:1px solid var(--border); border-radius:16px; overflow:hidden; transition:border-color 0.2s, transform 0.2s, box-shadow 0.2s; animation:cardUp 0.5s ease both; }
+    .plan-card:hover { transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,0.5); }
+    .plan-card:nth-child(1) { animation-delay:0.05s; border-top:3px solid var(--free); }
+    .plan-card:nth-child(2) { animation-delay:0.12s; border-top:3px solid var(--standard); }
+    .plan-card:nth-child(3) { animation-delay:0.19s; border-top:3px solid var(--premium); }
+    @keyframes cardUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    .card-header { padding:22px 24px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+    .plan-identity { display:flex; align-items:center; gap:12px; }
+    .plan-icon-wrap { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
+    .icon-free     { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.25); }
+    .icon-standard { background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.25); }
+    .icon-premium  { background:rgba(244,162,97,0.12); border:1px solid rgba(244,162,97,0.25); }
+    .plan-name-label { font-family:var(--font-head); font-size:1.3rem; font-weight:800; letter-spacing:0.05em; }
+    .name-free     { color:var(--free); }
+    .name-standard { color:var(--standard); }
+    .name-premium  { color:var(--premium); }
+    .last-updated { font-family:var(--font-mono); font-size:0.68rem; color:var(--muted); text-align:right; }
+
+    .card-body { padding:22px 24px 24px; }
+    .card-body form { display:flex; flex-direction:column; gap:16px; }
+
+    /* Field rows */
+    .field-group { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+    .field input, .field select { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:var(--font-body); font-size:0.88rem; outline:none; transition:border-color 0.2s, box-shadow 0.2s; width:100%; }
+    .field input:focus, .field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(245,158,11,0.12); }
+    .field input::placeholder { color:var(--muted); }
+    .rupee-wrap { position:relative; }
+    .rupee-wrap input { padding-left:26px; }
+    .rupee-sym { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:0.85rem; pointer-events:none; }
+
+    /* Ad-free toggle */
+    .toggle-field { display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 14px; }
+    .toggle-field label { font-size:0.85rem; color:var(--text); font-weight:500; cursor:pointer; }
+    .toggle-field .hint { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+    .switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider-sw { position:absolute; inset:0; background:var(--border); border-radius:50px; cursor:pointer; transition:background 0.3s; border:1px solid var(--border); }
+    .slider-sw::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:var(--muted); border-radius:50%; transition:transform 0.3s, background 0.3s; }
+    .switch input:checked + .slider-sw { background:rgba(245,158,11,0.25); border-color:var(--accent); }
+    .switch input:checked + .slider-sw::before { transform:translateX(20px); background:var(--accent); }
+
+    /* Save button */
+    .btn-save-plan { width:100%; padding:12px; background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.1)); border:1px solid rgba(245,158,11,0.4); border-radius:8px; color:var(--accent); font-family:var(--font-body); font-size:0.9rem; font-weight:700; cursor:pointer; transition:all 0.25s; letter-spacing:0.04em; }
+    .btn-save-plan:hover { background:linear-gradient(135deg,rgba(245,158,11,0.35),rgba(245,158,11,0.2)); transform:translateY(-1px); box-shadow:0 6px 20px rgba(245,158,11,0.2); }
+
+    /* Live preview */
+    .price-preview { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+    .preview-label { font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+    .preview-val { font-family:var(--font-head); font-size:1.4rem; font-weight:800; }
+    .preview-val.free-col     { color:var(--free); }
+    .preview-val.standard-col { color:var(--standard); }
+    .preview-val.premium-col  { color:var(--premium); }
+
+    /* Subscribers count badge */
+    .subs-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); border-radius:50px; padding:3px 10px; font-size:0.72rem; color:var(--info); font-weight:600; white-space:nowrap; }
+
+    @media (max-width:900px) { .sidebar{display:none;} .main{margin-left:0; padding:24px 16px;} .plans-grid{grid-template-columns:1fr;} .field-group{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="wordmark">StreamVault</div>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">Admin Panel</span>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-pill">
+        <div class="admin-avatar">{{ user.username|first|upper }}</div>
+        {{ user.username }}
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <p class="sidebar-section-label">Navigation</p>
+      <ul class="sidebar-nav">
+       <li>
+          <a href="/admin-dashboard/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-users/" >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>Manage Users
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-videos/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16"/>
+            </svg>Manage Videos
+          </a>
+        </li>
+        <li>
+          <a href="/admin-plans/" class="active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>Plan Management
+          </a>
+        </li>
+        <li>
+          <a href="/admin-category/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 6h16M4 12h16M4 18h10"/>
+            </svg>Categories
+          </a>
+        </li>
+      </ul>
+      <p class="sidebar-section-label">System</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/>
+            </svg>
+            View Site
+          </a>
+        </li>
+         <li>
+          <a href="/logout/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+            Logout
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="page-head">
+        <h1>Plan Management</h1>
+      </div>
+      <p class="page-subhead">Edit pricing, screen limits, download caps and quality for each plan. Changes reflect immediately on the pricing page.</p>
+
+      {% if messages %}
+        {% for msg in messages %}
+          <div class="flash {{ msg.tags }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="plans-grid">
+        {% for plan in plans %}
+
+        {# Always show editable cards for standard and premium. (Free is intentionally hidden.) #}
+        {% if plan.name == 'standard' %}
+          {% with icon="🚀" icon_cls="icon-standard" name_cls="name-standard" prev_cls="standard-col" %}
+          {% endwith %}
+        {% elif plan.name == 'premium' %}
+          {% with icon="👑" icon_cls="icon-premium" name_cls="name-premium" prev_cls="premium-col" %}
+          {% endwith %}
+        {% else %}
+          {# Skip non-standard/premium plans #}
+          {% endif %}
+
+        {% if plan.name == 'standard' or plan.name == 'premium' %}
+        <div class="plan-card">
+
+          <!-- Card header -->
+          <div class="card-header">
+            <div class="plan-identity">
+              <div class="plan-icon-wrap {{ icon_cls }}">{{ icon }}</div>
+              <div>
+                <div class="plan-name-label {{ name_cls }}">{{ plan.get_name_display }}</div>
+                <span class="subs-badge">
+                  👥 {{ plan.name|lower }} subscribers
+                </span>
+              </div>
+            </div>
+            <div class="last-updated">
+              Updated<br/>{{ plan.updated_at|date:"d M Y" }}
+            </div>
+          </div>
+
+          <!-- Edit form -->
+          <div class="card-body">
+            <form method="post" action="/admin-update-plan/{{ plan.id }}/"
+                  onsubmit="return validatePlan(this)">
+              {% csrf_token %}
+
+              <!-- Live preview -->
+              <div class="price-preview">
+                <div>
+                  <div class="preview-label">Monthly</div>
+                  <div class="preview-val {{ prev_cls }}" id="prev-monthly-{{ plan.id }}">
+                    ₹{{ plan.monthly_price|floatformat:0 }}
+                  </div>
+                </div>
+                <div style="text-align:right">
+                  <div class="preview-label">Annual</div>
+                  <div class="preview-val {{ prev_cls }}" id="prev-annual-{{ plan.id }}">
+                    ₹{{ plan.annual_price|floatformat:0 }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pricing -->
+              <div class="field-group">
+                <div class="field">
+                  <label>Monthly Price (₹)</label>
+                  <div class="rupee-wrap">
+                    <span class="rupee-sym">₹</span>
+                    <input type="number" name="monthly_price" min="0" step="1"
+                           value="{{ plan.monthly_price|floatformat:0 }}"
+                           oninput="updatePreview('{{ plan.id }}', 'monthly', this.value)"
+                           {% if plan.name == 'free' %}readonly style="opacity:0.5;cursor:not-allowed"{% endif %}/>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Annual Price (₹)</label>
+                  <div class="rupee-wrap">
+                    <span class="rupee-sym">₹</span>
+                    <input type="number" name="annual_price" min="0" step="1"
+                           value="{{ plan.annual_price|floatformat:0 }}"
+                           oninput="updatePreview('{{ plan.id }}', 'annual', this.value)"
+                           {% if plan.name == 'free' %}readonly style="opacity:0.5;cursor:not-allowed"{% endif %}/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Screens + Downloads -->
+              <div class="field-group">
+                <div class="field">
+                  <label>Max Screens</label>
+                  <input type="number" name="max_screens" min="1" max="10"
+                         value="{{ plan.max_screens }}"/>
+                </div>
+                <div class="field">
+                  <label>Max Downloads</label>
+                  <input type="number" name="max_downloads" min="0" max="999"
+                         value="{{ plan.max_downloads }}"/>
+                </div>
+              </div>
+
+              <!-- Video quality -->
+              <div class="field">
+                <label>Video Quality</label>
+                <select name="video_quality">
+                  <option value="480p"  {% if plan.video_quality == '480p'  %}selected{% endif %}>480p SD</option>
+                  <option value="720p"  {% if plan.video_quality == '720p'  %}selected{% endif %}>720p HD</option>
+                  <option value="1080p" {% if plan.video_quality == '1080p' %}selected{% endif %}>1080p Full HD</option>
+                  <option value="4K"    {% if plan.video_quality == '4K'    %}selected{% endif %}>4K Ultra HD</option>
+                </select>
+              </div>
+
+              <!-- Ad-free toggle -->
+              <div class="toggle-field">
+                <div>
+                  <label for="adfree-{{ plan.id }}">Ad-Free Experience</label>
+                  <div class="hint">Users on this plan won't see ads</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="adfree-{{ plan.id }}"
+                         {% if plan.ad_free %}checked{% endif %}
+                         onchange="document.getElementById('adfree-val-{{ plan.id }}').value = this.checked ? 'true' : 'false'"/>
+                  <span class="slider-sw"></span>
+                </label>
+                <input type="hidden" name="ad_free" id="adfree-val-{{ plan.id }}"
+                       value="{% if plan.ad_free %}true{% else %}false{% endif %}"/>
+              </div>
+
+              <button type="submit" class="btn-save-plan">💾 &nbsp;Save {{ plan.get_name_display }} Plan</button>
+            </form>
+          </div>
+        </div>
+
+        {% endif%}
+        {% endfor %}
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // Live price preview
+    function updatePreview(planId, type, value) {
+      const el = document.getElementById('prev-' + type + '-' + planId);
+      const num = parseInt(value) || 0;
+      el.textContent = '₹' + num.toLocaleString('en-IN');
+    }
+
+    // Basic validation — annual should be < monthly * 12 to make sense
+    function validatePlan(form) {
+      const monthlyInput = form.querySelector('input[name="monthly_price"]');
+      const annualInput = form.querySelector('input[name="annual_price"]');
+      const monthly = parseInt(monthlyInput ? monthlyInput.value : 0, 10) || 0;
+      const annual  = parseInt(annualInput ? annualInput.value : 0, 10) || 0;
+
+      if (annual > monthly * 12) {
+        alert('Annual price cannot be more than 12× the monthly price.');
+        return false;
+      }
+      return true;
+    }
+  </script>
+
+</body>
+</html>

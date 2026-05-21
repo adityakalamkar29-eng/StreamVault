@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault — Secure Checkout</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#060810; --surface:#0e1120; --card:#111827;
+      --border:rgba(255,255,255,0.08); --border-hover:rgba(255,255,255,0.18);
+      --accent:#e63946; --gold:#f4a261; --blue:#60a5fa; --green:#4ade80;
+      --text:#f0f0f0; --muted:#8a8fa8; --muted2:#5a607a;
+      --font-head:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif;
+    }
+    body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; overflow-x:hidden; }
+
+    /* BG */
+    .bg-glow {
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse 60% 50% at 10% 20%, rgba(230,57,70,0.08) 0%,transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(96,165,250,0.07) 0%,transparent 60%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(244,162,97,0.05) 0%,transparent 60%);
+    }
+    .grid { position:fixed; inset:0; z-index:0; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px); background-size:50px 50px; }
+
+    /* Navbar */
+    .navbar { position:relative; z-index:10; height:66px; display:flex; align-items:center; justify-content:space-between; padding:0 40px; border-bottom:1px solid var(--border); }
+    .logo { font-family:var(--font-head); font-size:1.6rem; letter-spacing:0.12em; background:linear-gradient(135deg,var(--accent),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-decoration:none; }
+    .secure-badge { display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--green); background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); border-radius:20px; padding:5px 12px; }
+
+    /* Layout */
+    .page { position:relative; z-index:5; max-width:1000px; margin:0 auto; padding:40px 24px 60px; display:grid; grid-template-columns:1fr 380px; gap:32px; }
+    @media(max-width:760px) { .page { grid-template-columns:1fr; } .order-summary { order:-1; } }
+
+    /* Section title */
+    .section-label { font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
+
+    /* ── Payment panel ── */
+    .payment-panel { display:flex; flex-direction:column; gap:24px; }
+
+    /* Method tabs */
+    .method-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .method-tab {
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      padding:14px 8px; border-radius:12px; border:1px solid var(--border);
+      background:rgba(255,255,255,0.02); cursor:pointer; transition:all 0.2s;
+      font-size:0.8rem; color:var(--muted); font-family:var(--font-body);
+    }
+    .method-tab:hover { border-color:var(--border-hover); color:var(--text); }
+    .method-tab.active { border-color:var(--gold); background:rgba(244,162,97,0.06); color:var(--gold); }
+    .method-tab .tab-icon { font-size:1.5rem; }
+
+    /* Form card */
+    .form-card { background:rgba(14,17,32,0.7); border:1px solid var(--border); border-radius:16px; padding:28px; backdrop-filter:blur(20px); }
+
+    /* Card visual */
+    .card-visual {
+      height:160px; border-radius:14px; padding:22px 24px; margin-bottom:24px;
+      background:linear-gradient(135deg,#1a1f3a 0%,#2d1b4e 50%,#1a2f4a 100%);
+      position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between;
+      box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    }
+    .card-visual::before { content:''; position:absolute; width:280px; height:280px; border-radius:50%; background:rgba(244,162,97,0.06); top:-80px; right:-60px; }
+    .card-visual::after  { content:''; position:absolute; width:200px; height:200px; border-radius:50%; background:rgba(96,165,250,0.05); bottom:-60px; left:-40px; }
+    .card-chip { width:36px; height:28px; border-radius:5px; background:linear-gradient(135deg,#c9a84c,#f0d060); position:relative; z-index:1; }
+    .card-chip::after { content:''; position:absolute; left:10px; top:50%; transform:translateY(-50%); width:16px; height:1px; background:rgba(0,0,0,0.3); box-shadow:0 5px 0 rgba(0,0,0,0.2), 0 -5px 0 rgba(0,0,0,0.2); }
+    .card-bottom { position:relative; z-index:1; }
+    .card-number { font-size:1.05rem; letter-spacing:0.22em; color:rgba(255,255,255,0.9); font-weight:600; margin-bottom:12px; font-family:monospace; }
+    .card-meta { display:flex; justify-content:space-between; align-items:flex-end; }
+    .card-meta-item { display:flex; flex-direction:column; gap:2px; }
+    .card-meta-item .lbl { font-size:0.58rem; color:rgba(255,255,255,0.4); letter-spacing:0.12em; text-transform:uppercase; }
+    .card-meta-item .val { font-size:0.85rem; color:rgba(255,255,255,0.85); }
+    .card-brand { font-family:var(--font-head); font-size:1.4rem; letter-spacing:0.05em; color:rgba(255,255,255,0.7); }
+
+    /* Form fields */
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:0.72rem; font-weight:600; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px; }
+    .field input, .field select {
+      width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+      border-radius:10px; padding:12px 16px; color:var(--text); font-family:var(--font-body); font-size:0.95rem;
+      outline:none; transition:border-color 0.2s,background 0.2s,box-shadow 0.2s;
+    }
+    .field input::placeholder { color:var(--muted2); }
+    .field input:focus, .field select:focus { border-color:var(--gold); background:rgba(244,162,97,0.04); box-shadow:0 0 0 3px rgba(244,162,97,0.1); }
+    .field select { appearance:none; cursor:pointer; }
+    .field select option { background:#111827; }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+    /* UPI panel */
+    .upi-panel { text-align:center; padding:20px 0; }
+    .upi-logo { font-size:2.2rem; margin-bottom:12px; }
+    .upi-title { font-size:1rem; font-weight:600; margin-bottom:20px; color:var(--text); }
+    .upi-input-wrap { position:relative; }
+    .upi-suffix { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:0.85rem; color:var(--muted); pointer-events:none; }
+    .upi-apps { display:flex; justify-content:center; gap:14px; margin-top:22px; flex-wrap:wrap; }
+    .upi-app { display:flex; flex-direction:column; align-items:center; gap:6px; font-size:0.72rem; color:var(--muted); cursor:pointer; transition:color 0.2s; padding:10px 14px; border-radius:10px; border:1px solid var(--border); }
+    .upi-app:hover { border-color:var(--border-hover); color:var(--text); background:rgba(255,255,255,0.03); }
+    .upi-app .app-icon { font-size:1.8rem; }
+
+    /* Netbanking panel */
+    .banks-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .bank-card { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:10px; border:1px solid var(--border); cursor:pointer; transition:all 0.2s; font-size:0.85rem; }
+    .bank-card:hover { border-color:var(--border-hover); background:rgba(255,255,255,0.03); }
+    .bank-card.selected { border-color:var(--gold); background:rgba(244,162,97,0.06); color:var(--gold); }
+    .bank-icon { font-size:1.4rem; width:30px; text-align:center; }
+    .bank-other { margin-top:10px; }
+
+    /* Pay button */
+    .btn-pay {
+      width:100%; padding:16px; margin-top:4px;
+      background:linear-gradient(135deg,var(--gold) 0%,#d4691a 100%);
+      color:#060810; font-family:var(--font-body); font-size:1rem; font-weight:700;
+      letter-spacing:0.04em; border:none; border-radius:12px; cursor:pointer;
+      box-shadow:0 8px 30px rgba(244,162,97,0.4); transition:all 0.25s; position:relative; overflow:hidden;
+    }
+    .btn-pay:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(244,162,97,0.55); }
+    .btn-pay:active { transform:translateY(0); }
+    .btn-pay .lock { margin-right:7px; }
+
+    /* Security note */
+    .security-note { display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.75rem; color:var(--muted2); margin-top:14px; }
+
+    /* ── Order Summary ── */
+    .order-summary { height:fit-content; }
+    .summary-card { background:rgba(14,17,32,0.7); border:1px solid var(--border); border-radius:16px; padding:28px; backdrop-filter:blur(20px); position:sticky; top:24px; }
+    .plan-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; margin-bottom:20px; font-size:0.78rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+    .badge-standard { background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.3); color:var(--blue); }
+    .badge-premium  { background:rgba(244,162,97,0.12); border:1px solid rgba(244,162,97,0.3); color:var(--gold); }
+    .plan-name { font-family:var(--font-head); font-size:2rem; letter-spacing:0.06em; margin-bottom:6px; }
+    .plan-tagline { font-size:0.85rem; color:var(--muted); margin-bottom:24px; }
+    .features-list { list-style:none; margin-bottom:24px; }
+    .features-list li { display:flex; align-items:center; gap:10px; font-size:0.87rem; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--muted); }
+    .features-list li:last-child { border-bottom:none; }
+    .features-list li .check { color:var(--green); font-weight:700; }
+    /* Billing toggle */
+    .billing-toggle { display:flex; background:rgba(255,255,255,0.04); border-radius:10px; padding:4px; margin-bottom:24px; }
+    .billing-opt { flex:1; text-align:center; padding:9px 8px; border-radius:8px; font-size:0.83rem; cursor:pointer; transition:all 0.2s; color:var(--muted); }
+    .billing-opt.active { background:rgba(244,162,97,0.15); color:var(--gold); font-weight:600; }
+    .price-display { margin-bottom:22px; }
+    .price-amount { font-family:var(--font-head); font-size:2.8rem; letter-spacing:0.04em; }
+    .price-period { font-size:0.85rem; color:var(--muted); margin-left:4px; }
+    .price-save { font-size:0.78rem; color:var(--green); margin-top:4px; display:none; }
+    .price-save.show { display:block; }
+    .divider-h { height:1px; background:var(--border); margin:20px 0; }
+    .summary-row { display:flex; justify-content:space-between; font-size:0.87rem; margin-bottom:10px; }
+    .summary-row.total { font-weight:700; font-size:1rem; color:var(--text); }
+    .summary-row .label { color:var(--muted); }
+    .trial-note { background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); border-radius:10px; padding:12px 14px; font-size:0.8rem; color:var(--green); display:flex; gap:8px; align-items:flex-start; }
+
+    /* ── Processing overlay ── */
+    .overlay { position:fixed; inset:0; z-index:100; background:rgba(6,8,16,0.92); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+    .overlay.show { opacity:1; pointer-events:all; }
+    .spinner-lg { width:52px; height:52px; border:3px solid rgba(244,162,97,0.15); border-top-color:var(--gold); border-radius:50%; animation:spin 0.9s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .overlay-text { font-size:1rem; color:var(--muted); }
+    .overlay-steps { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .step-line { font-size:0.83rem; color:var(--muted2); display:flex; align-items:center; gap:8px; }
+    .step-line.done { color:var(--green); }
+    .step-line .dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+    /* Success screen */
+    .success-screen { position:fixed; inset:0; z-index:101; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; opacity:0; pointer-events:none; transition:opacity 0.5s; }
+    .success-screen.show { opacity:1; pointer-events:all; }
+    .success-icon { font-size:4rem; animation:pop 0.5s cubic-bezier(0.22,1,0.36,1); }
+    @keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
+    .success-title { font-family:var(--font-head); font-size:2.4rem; letter-spacing:0.06em; }
+    .success-sub { font-size:0.9rem; color:var(--muted); }
+    .btn-continue { padding:13px 36px; background:linear-gradient(135deg,var(--gold),#d4691a); color:#060810; font-weight:700; border:none; border-radius:10px; cursor:pointer; font-size:0.95rem; box-shadow:0 6px 24px rgba(244,162,97,0.4); margin-top:10px; }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+  <div class="grid"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="{% url 'pricing' %}" class="logo">StreamVault</a>
+    <div class="secure-badge">🔒 256-bit SSL Encrypted</div>
+  </nav>
+
+  <div class ="page">
+
+      <!-- Method Tabs -->
+
+
+    <!-- ── Right: Order Summary ── -->
+    <div class="order-summary">
+      <div class="section-label">Order Summary</div>
+      <div class="summary-card">
+        <div class="plan-badge {{ plan }}-badge badge-{{ plan }}">
+          {% if plan == 'premium' %}👑{% else %}⭐{% endif %} {{ plan|capfirst }} Plan
+        </div>
+        <div class="plan-name">{{ plan|upper }} PLAN</div>
+        <div class="plan-tagline">
+          {% if plan == 'standard' %}Perfect for individuals & small families{% else %}The best of StreamVault, for power users{% endif %}
+        </div>
+
+        <!-- Billing toggle -->
+        <div class="billing-toggle">
+          <div class="billing-opt active" id="opt-monthly" onclick="setBilling('monthly')">Monthly</div>
+          <div class="billing-opt" id="opt-annual" onclick="setBilling('annual')">Annual <span style="font-size:0.7rem;color:var(--green)">Save 33%</span></div>
+        </div>
+
+        <!-- Price -->
+        <div class="price-display">
+          <div>
+            <span class="price-amount" id="priceDisplay">₹{{ plan_obj.monthly_price|default:"0" }}</span>
+            <span class="price-period" id="pricePeriod">/month</span>
+          </div>
+          <div class="price-save" id="priceSave">You save ₹<span id="saveAmount">0</span> per year!</div>
+        </div>
+        
+
+        <!-- Features -->
+        <ul class="features-list">
+          <li><span class="check">✓</span> {{ plan_obj.video_quality|default:"1080p" }} Video Quality</li>
+          <li><span class="check">✓</span> {{ plan_obj.max_screens|default:"2" }} Simultaneous Screens</li>
+          <li><span class="check">✓</span> {{ plan_obj.max_downloads|default:"25" }} Downloads / Month</li>
+          <li><span class="check">✓</span> {% if plan_obj.ad_free %}100% Ad-Free Experience{% else %}Standard Streaming{% endif %}</li>
+          <li><span class="check">✓</span> Cancel Anytime</li>
+        </ul>
+
+        <div class="divider-h"></div>
+        <div class="summary-row"><span class="label">Plan</span><span>{{ plan|capfirst }}</span></div>
+        <div class="summary-row"><span class="label">Billing</span><span id="billingLabel">Monthly</span></div>
+        <div class="summary-row"><span class="label">Taxes (18% GST)</span><span id="taxDisplay">₹0</span></div>
+        <div class="divider-h"></div>
+        <div class="summary-row total"><span>Total Due Today</span><span id="totalDisplay">₹0</span></div>
+
+        <div style="margin-top:20px">
+          <div class="trial-note">
+            <span>🎁</span>
+            <span>First 7 days FREE. Cancel before your trial ends and you won't be charged.</span>
+          </div>
+        </div>
+        <button class="btn-pay" onclick="processPayment()">
+          <span class="lock">🔒</span> Pay ₹<span id="payAmountNB">0</span> 
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing overlay -->
+  <div class="overlay" id="overlay">
+    <div class="spinner-lg"></div>
+    <div class="overlay-text">Processing your payment…</div>
+    <div class="overlay-steps" id="overlaySteps">
+      <div class="step-line" id="step1"><span class="dot"></span> Verifying payment details</div>
+      <div class="step-line" id="step2"><span class="dot"></span> Connecting to payment gateway</div>
+      <div class="step-line" id="step3"><span class="dot"></span> Activating your subscription</div>
+    </div>
+  </div>
+
+  <!-- Hidden form — submitted after Razorpay callback -->
+  <form method="post" action="/payment-success/" id="rzpCallbackForm" style="display:none">
+    {% csrf_token %}
+    <input type="hidden" name="razorpay_payment_id"  id="rzp_payment_id"/>
+    <input type="hidden" name="razorpay_order_id"    id="rzp_order_id"   value="{{ razorpay_order_id }}"/>
+    <input type="hidden" name="razorpay_signature"   id="rzp_signature"/>
+  </form>
+
+<script>
+  // ── Data from Django ──
+  const MONTHLY = parseFloat("{{ plan_obj.monthly_price|default:'0' }}");
+  const ANNUAL  = parseFloat("{{ plan_obj.annual_price|default:'0' }}");
+  const GST_RATE = 0.18;
+
+  let billing = 'monthly';
+  let baseAmount = MONTHLY;
+
+  function getTotal() { return Math.round(baseAmount * (1 + GST_RATE)); }
+  function getTax()   { return Math.round(baseAmount * GST_RATE); }
+
+  function updatePriceUI() {
+    document.getElementById('priceDisplay').textContent = '₹' + baseAmount;
+    document.getElementById('pricePeriod').textContent  = billing === 'monthly' ? '/month' : '/year';
+    document.getElementById('taxDisplay').textContent   = '₹' + getTax();
+    document.getElementById('totalDisplay').textContent = '₹' + getTotal();
+    document.getElementById('billingLabel').textContent = billing === 'monthly' ? 'Monthly' : 'Annual';
+    document.querySelectorAll('[id^="payAmount"]').forEach(el => el.textContent = getTotal());
+
+    const saved = MONTHLY * 12 - ANNUAL;
+    document.getElementById('saveAmount').textContent = Math.round(saved);
+    document.getElementById('priceSave').classList.toggle('show', billing === 'annual' && saved > 0);
+  }
+
+function setBilling(type) {
+
+    const monthlyBtn = document.getElementById('opt-monthly');
+    const annualBtn = document.getElementById('opt-annual');
+    
+    if(type === 'monthly') {
+      console.log(type)
+        monthlyBtn.classList.add('active');
+        annualBtn.classList.remove('active');
+    }
+    else {
+        annualBtn.classList.add('active');
+        monthlyBtn.classList.remove('active');
+    }
+
+
+    updatePriceUI();
+}
+  updatePriceUI();
+
+  // ── Method tabs ──
+  function switchMethod(method, btn) {
+    document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['card','upi','netbanking'].forEach(m => {
+      document.getElementById('panel-' + m).style.display = m === method ? 'block' : 'none';
+    });
+  }
+
+  // ── Card formatting ──
+  function formatCard(input) {
+    let v = input.value.replace(/\D/g,'').slice(0,16);
+    input.value = v.replace(/(.{4})/g,'$1 ').trim();
+    const disp = v.padEnd(16,'•').replace(/(.{4})/g,'$1 ').trim();
+    document.getElementById('previewNum').textContent = disp;
+    // Brand detection
+    const brand = v[0] === '4' ? 'VISA' : v[0] === '5' ? 'MASTERCARD' : v[0] === '3' ? 'AMEX' : 'CARD';
+    document.getElementById('previewBrand').textContent = brand;
+  }
+
+  function formatExpiry(input) {
+    let v = input.value.replace(/\D/g,'');
+    if (v.length >= 2) v = v.slice(0,2) + ' / ' + v.slice(2,4);
+    input.value = v;
+    document.getElementById('previewExp').textContent = input.value || 'MM/YY';
+  }
+
+  // ── UPI ──
+  function setUpiApp(app) {
+    const id = document.getElementById('upiId');
+    const suffixes = { 'GPay':'@okaxis', 'PhonePe':'@ybl', 'Paytm':'@paytm', 'BHIM':'@upi' };
+    if (!id.value.includes('@')) id.value = id.value + (suffixes[app] || '@upi');
+  }
+
+  // ── Net banking ──
+  function selectBank(el, name) {
+    document.querySelectorAll('.bank-card').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('otherBank').value = '';
+  }
+
+  // ── Razorpay Integration ──────────────────────────────────────────────────
+
+  // Current Razorpay order state (may change if user toggles billing cycle)
+  let rzpOrderId   = "{{ razorpay_order_id }}";
+  let rzpAmountPaise = "{{ amount_paise }}";
+
+  // When user switches billing cycle, fetch a new Razorpay order via AJAX
+async function setBilling(type) {
+
+    billing = type;
+
+    baseAmount = type === 'monthly'
+        ? MONTHLY
+        : ANNUAL;
+
+    const monthlyBtn = document.getElementById('opt-monthly');
+    const annualBtn  = document.getElementById('opt-annual');
+
+    if(type === 'monthly') {
+        monthlyBtn.classList.add('active');
+        annualBtn.classList.remove('active');
+    }
+    else {
+        annualBtn.classList.add('active');
+        monthlyBtn.classList.remove('active');
+    }
+
+    updatePriceUI();
+
+    // Refresh Razorpay order
+    try {
+
+        const res = await fetch('/create-razorpay-order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({
+                plan: '{{ plan }}',
+                billing: type
+            }),
+        });
+
+        const data = await res.json();
+
+        if(data.order_id) {
+            rzpOrderId = data.order_id;
+            rzpAmountPaise = data.amount_paise;
+
+            document.getElementById('rzp_order_id').value =
+                data.order_id;
+        }
+
+    } catch(e) {
+        console.error('Failed to refresh Razorpay order:', e);
+    }
+}
+
+  
+
+
+  function openRazorpay() {
+    const overlay = document.getElementById('overlay');
+    overlay.classList.add('show');
+
+    const options = {
+      key:         '{{ razorpay_key_id }}',
+      amount:      rzpAmountPaise,
+      currency:    'INR',
+      name:        'StreamVault',
+      description: '{{ plan|capfirst }} Plan — ' + (billing === 'annual' ? 'Annual' : 'Monthly'),
+      order_id:    rzpOrderId,
+      prefill: {
+        name:  '{{ user_name }}',
+        email: '{{ user_email }}',
+      },
+      theme:    { color: '#e63946' },
+      modal:    {
+        ondismiss: function() {
+          overlay.classList.remove('show');
+        }
+      },
+      handler: function(response) {
+        // Payment succeeded — submit hidden form to Django for verification
+        document.getElementById('rzp_payment_id').value = response.razorpay_payment_id;
+        document.getElementById('rzp_order_id').value   = response.razorpay_order_id;
+        document.getElementById('rzp_signature').value  = response.razorpay_signature;
+        document.getElementById('rzpCallbackForm').submit();
+      },
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(response) {
+      overlay.classList.remove('show');
+      alert('Payment failed: ' + response.error.description + '\nPlease try again.');
+    });
+    rzp.open();
+  }
+
+  // Wire the existing Pay button to openRazorpay
+  function processPayment() {
+    openRazorpay();
+  }
+
+  // Init price UI
+  updatePriceUI();
+</script>
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</body>
+</html>

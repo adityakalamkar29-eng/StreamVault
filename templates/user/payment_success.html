@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault — Payment Successful</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#060810;--panel:#131626;--border:rgba(255,255,255,0.08);--accent:#e63946;--gold:#f4a261;--ok:#4ade80;--text:#f0f0f0;--muted:#8a8fa8;--font-head:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .orb{position:fixed;border-radius:50%;filter:blur(100px);opacity:0.1;pointer-events:none;width:500px;height:500px;background:var(--ok);top:-100px;left:50%;transform:translateX(-50%);}
+    .card{width:100%;max-width:500px;background:var(--panel);border:1px solid rgba(74,222,128,0.3);border-radius:24px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(74,222,128,0.06);animation:cardIn 0.7s cubic-bezier(0.22,1,0.36,1) both;}
+    @keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .card-header{padding:40px 36px 28px;text-align:center;}
+    .check-wrap{width:80px;height:80px;border-radius:50%;background:rgba(74,222,128,0.12);border:2px solid rgba(74,222,128,0.35);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;}
+    @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+    .check-wrap svg{width:36px;height:36px;stroke:var(--ok);stroke-width:3;fill:none;stroke-dasharray:60;stroke-dashoffset:60;animation:drawCheck 0.5s ease 0.7s forwards;}
+    @keyframes drawCheck{to{stroke-dashoffset:0}}
+    .card-header h1{font-family:var(--font-head);font-size:2.4rem;letter-spacing:0.05em;color:var(--ok);margin-bottom:8px;}
+    .card-header p{color:var(--muted);font-size:0.88rem;}
+    .receipt{margin:0 28px 24px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+    .receipt-hdr{padding:12px 18px;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+    .receipt-hdr span{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+    .receipt-hdr .oid{font-size:0.78rem;color:var(--text);font-weight:600;}
+    .receipt-body{padding:18px;}
+    .rrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.85rem;}
+    .rrow:last-child{border-bottom:none;padding-top:14px;}
+    .rrow .rl{color:var(--muted);}
+    .rrow .rv{font-weight:600;}
+    .rrow.total .rv{font-family:var(--font-head);font-size:1.5rem;color:var(--gold);}
+    .plan-strip{margin:0 28px 24px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;}
+    .plan-strip .icon{font-size:1.8rem;}
+    .plan-strip h4{font-size:0.9rem;font-weight:700;margin-bottom:2px;}
+    .plan-strip p{font-size:0.75rem;color:var(--muted);}
+    .actions{display:flex;gap:10px;padding:0 28px 32px;}
+    .btn-home{flex:1;padding:13px;background:linear-gradient(135deg,var(--accent),#c1121f);color:#fff;border:none;border-radius:10px;font-family:var(--font-body);font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;display:block;transition:all 0.2s;}
+    .btn-home:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(230,57,70,0.4);}
+    .btn-hist{flex:1;padding:13px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:0.9rem;text-decoration:none;text-align:center;display:block;transition:all 0.2s;}
+    .btn-hist:hover{color:var(--text);background:rgba(255,255,255,0.08);}
+  </style>
+</head>
+<body>
+  <div class="orb"></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="check-wrap">
+        <svg viewBox="0 0 52 52"><polyline points="14,27 22,36 38,18"/></svg>
+      </div>
+      <h1>Payment Successful!</h1>
+      <p>Your subscription is now active. Enjoy StreamVault!</p>
+    </div>
+
+    {% if order %}
+    <div class="receipt">
+      <div class="receipt-hdr">
+        <span>Receipt</span>
+        <span class="oid">#{{ order.razorpay_payment_id|default:order.razorpay_order_id }}</span>
+      </div>
+      <div class="receipt-body">
+        <div class="rrow"><span class="rl">Plan</span><span class="rv">{{ order.plan|capfirst }}</span></div>
+        <div class="rrow"><span class="rl">Billing</span><span class="rv">{{ order.billing|capfirst }}</span></div>
+        <div class="rrow"><span class="rl">Date</span><span class="rv">{{ order.completed_at|date:"d M Y, h:i A" }}</span></div>
+        <div class="rrow total"><span class="rl">Amount Paid</span><span class="rv">₹{{ order.amount|floatformat:0 }}</span></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="plan-strip">
+      <span class="icon">{% if sub.plan == 'premium' %}👑{% else %}🚀{% endif %}</span>
+      <div>
+        <h4>{{ sub.plan|capfirst }} Plan Active</h4>
+        <p>You now have access to all {{ sub.plan }} content</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a href="/" class="btn-home">▶ Start Watching</a>
+      <a href="/payment-history/" class="btn-hist">📋 History</a>
+    </div>
+  </div>
+</body>
+</html>

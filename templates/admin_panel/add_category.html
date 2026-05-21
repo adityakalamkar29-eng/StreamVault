@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="/TestApp/Demo/static/css/style.css">
+</head>
+<body>
+
+<div class="admin-container">
+    <h2>Add Category</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <input name="name">
+        <button>Add</button>
+    </form>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,121 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+    background: black;
+    position: sticky;
+    top: 0;
+}
+
+.logo {
+    color: red;
+    font-size: 24px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+/* HERO */
+.hero {
+    position: relative;
+    height: 80vh;
+}
+
+.hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-content {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+}
+
+.hero button {
+    padding: 10px 20px;
+    background: red;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* ROW */
+.row {
+    margin: 20px;
+}
+
+.row h2 {
+    margin-bottom: 10px;
+}
+
+.row-posters {
+    display: flex;
+    overflow-x: auto;
+}
+
+.row-posters::-webkit-scrollbar {
+    display: none;
+}
+
+/* CARD */
+.card {
+    margin-right: 10px;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.card img {
+    width: 200px;
+    border-radius: 5px;
+}
+
+.card:hover {
+    transform: scale(1.1);
+}
+
+/* AUTH */
+.auth-box {
+    width: 300px;
+    margin: 120px auto;
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+}
+
+.auth-box input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+}
+
+.auth-box button {
+    width: 100%;
+    padding: 10px;
+    background: red;
+    border: none;
+    color: white;
+}
+
+/* ADMIN */
+.admin-container {
+    padding: 20px;
+}
+
+.admin-box {
+    background: #222;
+    padding: 20px;
+    margin: 10px 0;
+}

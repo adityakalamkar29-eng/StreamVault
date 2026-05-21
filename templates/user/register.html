@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault — Create Account</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#060810; --surface:#0e1120; --glass:rgba(255,255,255,0.04);
+      --border:rgba(255,255,255,0.08); --accent:#e63946; --accent2:#ff6b6b;
+      --gold:#f4a261; --text:#f0f0f0; --muted:#8a8fa8;
+      --green:#4ade80; --red:#f87171;
+      --font-head:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif;
+    }
+    body {
+      background:var(--bg); color:var(--text); font-family:var(--font-body);
+      min-height:100vh; display:flex; flex-direction:column; overflow:auto;
+    }
+    .bg-canvas {
+      position:fixed; inset:0; z-index:0;
+      background:
+        radial-gradient(ellipse 70% 60% at 80% 20%, rgba(244,162,97,0.1) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 15% 80%, rgba(230,57,70,0.1) 0%, transparent 60%),
+        var(--bg);
+    }
+    .orb { position:fixed; border-radius:50%; filter:blur(80px); opacity:0.15; animation:drift 12s ease-in-out infinite alternate; pointer-events:none; }
+    .orb-1 { width:400px; height:400px; background:var(--gold); top:-80px; right:-80px; animation-duration:16s; }
+    .orb-2 { width:320px; height:320px; background:var(--accent); bottom:-60px; left:10%; animation-duration:11s; animation-delay:-4s; }
+    @keyframes drift { from{transform:translate(0,0) scale(1)} to{transform:translate(30px,20px) scale(1.06)} }
+    .grid-overlay { position:fixed; inset:0; z-index:0; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px); background-size:60px 60px; }
+    .navbar { position:relative; z-index:10; height:72px; display:flex; align-items:center; padding:0 48px; }
+    .logo { font-family:var(--font-head); font-size:1.8rem; letter-spacing:0.12em; background:linear-gradient(135deg,var(--accent),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-decoration:none; }
+    .auth-wrapper { position:relative; z-index:5; flex:1; display:flex; align-items:center; justify-content:center; padding:24px 24px 48px; }
+    .auth-card {
+      width:100%; max-width:460px;
+      background:rgba(14,17,32,0.82); border:1px solid var(--border);
+      border-radius:20px; padding:44px 40px; backdrop-filter:blur(24px);
+      box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04),inset 0 1px 0 rgba(255,255,255,0.07);
+      animation:cardIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes cardIn { from{opacity:0;transform:translateY(32px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+    .auth-card::before { content:''; display:block; height:3px; background:linear-gradient(to right,var(--gold),var(--accent),transparent); border-radius:3px 3px 0 0; margin:-44px -40px 40px; }
+    .auth-card h2 { font-family:var(--font-head); font-size:2.2rem; letter-spacing:0.06em; margin-bottom:6px; }
+    .auth-card .subtitle { font-size:0.85rem; color:var(--muted); margin-bottom:24px; }
+    .benefits { display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+    .benefit-tag { display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; font-weight:500; color:var(--gold); background:rgba(244,162,97,0.1); border:1px solid rgba(244,162,97,0.2); border-radius:20px; padding:4px 10px; }
+    /* Alert */
+    .alert { display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-radius:10px; margin-bottom:18px; font-size:0.84rem; line-height:1.5; }
+    .alert-error { background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.3); color:#fca5a5; }
+    .alert-success { background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); color:#86efac; }
+    .alert ul { list-style:none; margin:0; padding:0; }
+    .alert ul li::before { content:"• "; }
+    /* Fields */
+    .field { margin-bottom:15px; }
+    .field label { display:block; font-size:0.75rem; font-weight:600; letter-spacing:0.1em; color:var(--muted); text-transform:uppercase; margin-bottom:7px; }
+    .input-wrap { position:relative; }
+    .input-wrap input { padding-right:42px; }
+    .status-icon { position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:0.9rem; pointer-events:none; opacity:0; transition:opacity 0.2s; }
+    .status-icon.visible { opacity:1; }
+    .eye-btn { position:absolute; right:13px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; line-height:1; font-size:1rem; }
+    .eye-btn:hover { color:var(--text); }
+    .field input { width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; padding:12px 16px; color:var(--text); font-family:var(--font-body); font-size:0.95rem; outline:none; transition:border-color 0.25s,background 0.25s,box-shadow 0.25s; }
+    .field input::placeholder { color:var(--muted); }
+    .field input:focus { border-color:var(--gold); background:rgba(244,162,97,0.05); box-shadow:0 0 0 3px rgba(244,162,97,0.12); }
+    .field input.field-ok    { border-color:var(--green)!important; background:rgba(74,222,128,0.05)!important; }
+    .field input.field-error { border-color:var(--red)!important;   background:rgba(248,113,113,0.05)!important; }
+    .field-hint { font-size:0.74rem; margin-top:4px; min-height:16px; display:flex; align-items:center; gap:5px; }
+    .field-hint.ok  { color:var(--green); }
+    .field-hint.err { color:var(--red); }
+    .field-hint.warn { color:#f59e0b; }
+    .spinner { width:12px; height:12px; border:2px solid rgba(255,255,255,0.1); border-top-color:#f59e0b; border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    /* Strength */
+    .strength-bar { display:flex; gap:4px; margin-top:7px; }
+    .strength-seg { flex:1; height:3px; border-radius:3px; background:var(--border); transition:background 0.3s; }
+    .strength-label { font-size:0.72rem; margin-top:4px; min-height:14px; }
+    /* Submit */
+    .btn-submit { width:100%; padding:14px; margin-top:10px; background:linear-gradient(135deg,var(--gold) 0%,#e07d3a 100%); color:#060810; font-family:var(--font-body); font-size:0.95rem; font-weight:700; letter-spacing:0.04em; border:none; border-radius:10px; cursor:pointer; box-shadow:0 6px 28px rgba(244,162,97,0.35); transition:all 0.25s; }
+    .btn-submit:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 10px 36px rgba(244,162,97,0.5); }
+    .btn-submit:active:not(:disabled) { transform:translateY(0); }
+    .btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
+    .divider { display:flex; align-items:center; gap:12px; margin:22px 0; color:var(--muted); font-size:0.78rem; }
+    .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+    .auth-footer { text-align:center; font-size:0.85rem; color:var(--muted); }
+    .auth-footer a { color:var(--accent2); text-decoration:none; font-weight:600; }
+    .auth-footer a:hover { color:var(--accent); }
+    .terms-note { text-align:center; font-size:0.72rem; color:var(--muted); margin-top:14px; line-height:1.6; }
+  </style>
+</head>
+<body>
+  <div class="bg-canvas"></div>
+  <div class="grid-overlay"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <nav class="navbar">
+    <a href="/" class="logo">StreamVault</a>
+  </nav>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h2>Join Now</h2>
+      <p class="subtitle">Create your account and start streaming</p>
+
+      <div class="benefits">
+        <span class="benefit-tag">✦ Unlimited streams</span>
+        <span class="benefit-tag">✦ HD Quality</span>
+        <span class="benefit-tag">✦ Free to start</span>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+            <span>{% if message.tags == 'error' %}⚠{% else %}✓{% endif %}</span>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if errors %}
+        <div class="alert alert-error">
+          <span>⚠</span>
+          <ul>{% for key, msg in errors.items %}<li>{{ msg }}</li>{% endfor %}</ul>
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'register' %}" id="registerForm" novalidate>
+        {% csrf_token %}
+
+        <!-- Email -->
+        <div class="field">
+          <label for="email">Email Address</label>
+          <div class="input-wrap">
+            <input id="email" name="email" type="email" placeholder="you@example.com"
+                   value="{{ old_email|default:'' }}"
+                   oninput="checkField('email', this.value)"
+                   autocomplete="email"/>
+            <span class="status-icon" id="icon-email"></span>
+          </div>
+          <div class="field-hint" id="hint-email">
+            {% if errors.email %}<span>⚠ {{ errors.email }}</span>{% endif %}
+          </div>
+        </div>
+
+        <!-- Username -->
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <input id="username" name="username" type="text" placeholder="Choose a username"
+                   value="{{ old_username|default:'' }}"
+                   oninput="checkField('username', this.value)"
+                   autocomplete="username"/>
+            <span class="status-icon" id="icon-username"></span>
+          </div>
+          <div class="field-hint" id="hint-username">
+            {% if errors.username %}<span>⚠ {{ errors.username }}</span>{% endif %}
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <input id="password" name="password" type="password"
+                   placeholder="Create a strong password"
+                   autocomplete="new-password"
+                   oninput="updateStrength(this.value); checkPassMatch()"/>
+            <button type="button" class="eye-btn" onclick="toggleEye('password')" title="Show/hide">👁</button>
+          </div>
+          <div class="strength-bar"><div class="strength-seg" id="s1"></div><div class="strength-seg" id="s2"></div><div class="strength-seg" id="s3"></div><div class="strength-seg" id="s4"></div></div>
+          <div class="strength-label" id="strengthLabel"></div>
+          {% if errors.password %}<div class="field-hint err">⚠ {{ errors.password }}</div>{% endif %}
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="field">
+          <label for="confirm_password">Confirm Password</label>
+          <div class="input-wrap">
+            <input id="confirm_password" name="confirm_password" type="password"
+                   placeholder="Re-enter your password"
+                   autocomplete="new-password"
+                   oninput="checkPassMatch()"/>
+            <button type="button" class="eye-btn" onclick="toggleEye('confirm_password')" title="Show/hide">👁</button>
+          </div>
+          <div class="field-hint" id="hint-confirm">
+            {% if errors.confirm_password %}<span class="err">⚠ {{ errors.confirm_password }}</span>{% endif %}
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">Create Account →</button>
+      </form>
+
+      <div class="divider">or</div>
+      <p class="auth-footer">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
+      <p class="terms-note">By registering, you agree to our Terms of Service and Privacy Policy.</p>
+    </div>
+  </div>
+
+<script>
+  const timers = {};
+  const state  = { email: null, username: null, confirm: null };
+
+  function checkField(field, value) {
+    const input = document.getElementById(field);
+    const hint  = document.getElementById('hint-' + field);
+    const icon  = document.getElementById('icon-' + field);
+    clearTimeout(timers[field]);
+    state[field] = null;
+    updateBtn();
+
+    if (!value.trim()) { resetField(field); return; }
+
+    hint.className = 'field-hint warn';
+    hint.innerHTML = '<div class="spinner"></div> Checking…';
+    icon.textContent = ''; icon.className = 'status-icon'; input.className = '';
+
+    timers[field] = setTimeout(() => {
+      fetch(`/check-field/?field=${field}&value=${encodeURIComponent(value)}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === 'ok') {
+            hint.className = 'field-hint ok'; hint.textContent = '✓ ' + d.message;
+            icon.textContent = '✓'; icon.className = 'status-icon visible'; input.className = 'field-ok';
+            state[field] = 'ok';
+          } else {
+            hint.className = 'field-hint err'; hint.textContent = '✗ ' + d.message;
+            icon.textContent = '✗'; icon.className = 'status-icon visible'; input.className = 'field-error';
+            state[field] = 'error';
+          }
+          updateBtn();
+        }).catch(() => { state[field] = 'ok'; updateBtn(); });
+    }, 420);
+  }
+
+  function resetField(field) {
+    document.getElementById(field).className = '';
+    document.getElementById('hint-' + field).className = 'field-hint';
+    document.getElementById('hint-' + field).textContent = '';
+    document.getElementById('icon-' + field).className = 'status-icon';
+    updateBtn();
+  }
+
+  const sColors = ['','#e63946','#f59e0b','#f4a261','#4ade80'];
+  const sLabels = ['','Weak','Fair','Good','Strong'];
+  function updateStrength(v) {
+    let s = 0;
+    if (v.length >= 6) s++;
+    if (v.length >= 10) s++;
+    if (/[A-Z]|[0-9]/.test(v)) s++;
+    if (/[^a-zA-Z0-9]/.test(v)) s++;
+    ['s1','s2','s3','s4'].forEach((id,i) => {
+      document.getElementById(id).style.background = i < s ? sColors[Math.min(s,4)] : 'var(--border)';
+    });
+    const lbl = document.getElementById('strengthLabel');
+    lbl.textContent = v ? sLabels[Math.min(s,4)] : '';
+    lbl.style.color = sColors[Math.min(s,4)];
+  }
+
+  function checkPassMatch() {
+    const p1 = document.getElementById('password').value;
+    const p2 = document.getElementById('confirm_password').value;
+    const hint = document.getElementById('hint-confirm');
+    const inp  = document.getElementById('confirm_password');
+    if (!p2) { hint.className='field-hint'; hint.textContent=''; inp.className=''; state.confirm=null; updateBtn(); return; }
+    if (p1 === p2) { hint.className='field-hint ok'; hint.textContent='✓ Passwords match'; inp.className='field-ok'; state.confirm='ok'; }
+    else           { hint.className='field-hint err'; hint.textContent='✗ Passwords do not match'; inp.className='field-error'; state.confirm='error'; }
+    updateBtn();
+  }
+
+  function updateBtn() {
+    const bad = state.email==='error' || state.username==='error' || state.confirm==='error';
+    document.getElementById('submitBtn').disabled = bad;
+  }
+
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const email   = document.getElementById('email').value.trim();
+    const uname   = document.getElementById('username').value.trim();
+    const pass    = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+    const errs = [];
+    if (!email)    errs.push('Email is required.');
+    if (!uname)    errs.push('Username is required.');
+    if (!pass)     errs.push('Password is required.');
+    else if (pass.length < 6) errs.push('Password must be at least 6 characters.');
+    if (pass && confirm !== pass) errs.push('Passwords do not match.');
+    if (state.email === 'error')    errs.push('That email is already taken.');
+    if (state.username === 'error') errs.push('That username is already taken.');
+    if (errs.length) {
+      e.preventDefault();
+      document.querySelectorAll('.js-alert').forEach(el => el.remove());
+      const b = document.createElement('div');
+      b.className = 'alert alert-error js-alert';
+      b.innerHTML = '<span>⚠</span><ul>' + errs.map(m=>`<li>${m}</li>`).join('') + '</ul>';
+      this.prepend(b); b.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+  });
+
+  function toggleEye(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+</script>
+</body>
+</html>

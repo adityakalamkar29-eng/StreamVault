@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault — Payment History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#060810;--surface:#0e1120;--panel:#131626;--border:rgba(255,255,255,0.08);--accent:#e63946;--gold:#f4a261;--ok:#4ade80;--text:#f0f0f0;--muted:#8a8fa8;--font-head:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'IBM Plex Mono',monospace;--nav-h:72px;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;}
+    .navbar{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--nav-h);display:flex;align-items:center;justify-content:space-between;padding:0 48px;background:rgba(6,8,16,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+    .logo{font-family:var(--font-head);font-size:2rem;letter-spacing:0.12em;background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;}
+    .nav-links a{color:var(--muted);text-decoration:none;font-size:0.85rem;padding:8px 16px;border-radius:6px;border:1px solid transparent;margin-left:6px;transition:all 0.2s;}
+    .nav-links a:hover{color:var(--text);border-color:var(--border);background:rgba(255,255,255,0.04);}
+    .page{padding:calc(var(--nav-h) + 48px) 48px 80px;max-width:900px;margin:0 auto;}
+    .page-head{margin-bottom:32px;}
+    .page-head h1{font-family:var(--font-head);font-size:2.8rem;letter-spacing:0.04em;margin-bottom:6px;}
+    .page-head p{color:var(--muted);font-size:0.88rem;}
+    .plan-strip{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:32px;}
+    .plan-strip .icon{font-size:2rem;}
+    .plan-strip h4{font-weight:700;margin-bottom:2px;}
+    .plan-strip p{font-size:0.78rem;color:var(--muted);}
+    .table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+    table{width:100%;border-collapse:collapse;}
+    thead th{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);padding:12px 18px;text-align:left;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);}
+    tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:rgba(255,255,255,0.02);}
+    tbody td{padding:14px 18px;font-size:0.85rem;vertical-align:middle;}
+    .oid{font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);}
+    .plan-chip{display:inline-flex;align-items:center;gap:4px;border-radius:50px;padding:3px 10px;font-size:0.72rem;font-weight:700;}
+    .chip-standard{background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.3);color:#60a5fa;}
+    .chip-premium{background:rgba(244,162,97,0.12);border:1px solid rgba(244,162,97,0.3);color:#f4a261;}
+    .amount-col{font-family:var(--font-mono);font-weight:700;color:var(--gold);}
+    .ok{color:var(--ok);font-weight:700;font-size:0.78rem;}
+    .fail{color:#f87171;font-weight:700;font-size:0.78rem;}
+    .date-col{font-family:var(--font-mono);font-size:0.73rem;color:var(--muted);}
+    .empty{text-align:center;padding:60px;color:var(--muted);}
+    .empty h3{font-family:var(--font-head);font-size:1.8rem;margin-bottom:10px;color:var(--text);}
+    .btn-plans{display:inline-block;margin-top:20px;padding:11px 24px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.88rem;}
+    @media(max-width:768px){.navbar{padding:0 20px;}.page{padding:calc(var(--nav-h)+28px) 16px 60px;}thead th,tbody td{padding:10px 10px;}table{font-size:0.78rem;}}
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo">StreamVault</a>
+    <div class="nav-links">
+      <a href="/">Home</a><a href="/pricing/">Plans</a><a href="/logout/">Sign Out</a>
+    </div>
+  </nav>
+  <div class="page">
+    <div class="page-head">
+      <h1>Payment History</h1>
+      <p>All your Razorpay transactions</p>
+    </div>
+    <div class="plan-strip">
+      <span class="icon">{% if sub.plan == 'premium' %}👑{% elif sub.plan == 'standard' %}🚀{% else %}🎬{% endif %}</span>
+      <div><h4>{{ sub.plan|capfirst }} Plan</h4><p>Currently active subscription</p></div>
+    </div>
+    {% if orders %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Razorpay Order ID</th><th>Plan</th><th>Billing</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td class="oid">{{ o.razorpay_order_id }}</td>
+            <td><span class="plan-chip chip-{{ o.plan }}">{{ o.plan|capfirst }}</span></td>
+            <td>{{ o.billing|capfirst }}</td>
+            <td class="amount-col">₹{{ o.amount|floatformat:0 }}</td>
+            <td>{% if o.status == 'success' %}<span class="ok">✓ Success</span>{% else %}<span class="fail">✕ {{ o.status|capfirst }}</span>{% endif %}</td>
+            <td class="date-col">{{ o.created_at|date:"d M Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">
+      <h3>No payments yet</h3>
+      <p>Your Razorpay transactions will appear here after subscribing.</p>
+      <a href="/pricing/" class="btn-plans">View Plans →</a>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

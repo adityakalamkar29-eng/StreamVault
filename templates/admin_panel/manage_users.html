@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault Admin — Manage Users</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#08090d; --surface:#0f1117; --panel:#141720; --border:rgba(255,255,255,0.07);
+      --accent:#f59e0b; --danger:#ef4444; --success:#22c55e; --info:#38bdf8; --purple:#a78bfa;
+      --text:#e8eaf0; --muted:#6b7280;
+      --free:#4ade80; --standard:#60a5fa; --premium:#f4a261;
+      --font-head:'Syne',sans-serif; --font-body:'IBM Plex Sans',sans-serif;
+      --font-mono:'IBM Plex Mono',monospace; --sidebar-w:230px; --nav-h:60px;
+    }
+    html, body { height:100%; }
+    body { background:var(--bg); color:var(--text); font-family:var(--font-body); display:flex; flex-direction:column; }
+
+    /* TOPBAR */
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:200; height:var(--nav-h); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; }
+    .topbar-left { display:flex; align-items:center; gap:20px; }
+    .wordmark { font-family:var(--font-head); font-size:1.15rem; font-weight:800; letter-spacing:0.06em; background:linear-gradient(135deg,var(--accent),#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .topbar-divider { width:1px; height:20px; background:var(--border); }
+    .topbar-label { font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .admin-pill { display:flex; align-items:center; gap:7px; background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:5px 14px 5px 8px; font-size:0.8rem; color:var(--muted); }
+    .admin-avatar { width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#c97c08); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:var(--bg); }
+    .btn-logout { display:flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; color:var(--danger); font-size:0.78rem; font-weight:500; text-decoration:none; transition:all 0.2s; }
+    .btn-logout:hover { background:rgba(239,68,68,0.2); border-color:var(--danger); }
+
+    /* LAYOUT */
+    .layout { display:flex; margin-top:var(--nav-h); min-height:calc(100vh - var(--nav-h)); }
+
+    /* SIDEBAR */
+    .sidebar { position:fixed; top:var(--nav-h); left:0; width:var(--sidebar-w); height:calc(100vh - var(--nav-h)); background:var(--surface); border-right:1px solid var(--border); padding:28px 0; display:flex; flex-direction:column; overflow-y:auto; }
+    .sidebar-section-label { font-family:var(--font-mono); font-size:0.62rem; letter-spacing:0.18em; color:var(--muted); text-transform:uppercase; padding:0 20px 8px; }
+    .sidebar-nav { list-style:none; margin-bottom:28px; }
+    .sidebar-nav li a { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); text-decoration:none; font-size:0.85rem; font-weight:500; border-left:2px solid transparent; transition:all 0.18s; }
+    .sidebar-nav li a:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+    .sidebar-nav li a.active { color:var(--accent); border-left-color:var(--accent); background:rgba(245,158,11,0.06); }
+    .nav-icon { width:16px; height:16px; opacity:0.7; flex-shrink:0; }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar-w); flex:1; padding:36px 40px; }
+    .page-head { margin-bottom:28px; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    .page-head h1 { font-family:var(--font-head); font-size:2rem; font-weight:800; letter-spacing:0.03em; }
+
+    /* FLASH */
+    .flash { padding:10px 16px; border-radius:8px; font-size:0.85rem; font-weight:500; margin-bottom:16px; }
+    .flash.success { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:#86efac; }
+    .flash.error   { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; }
+    .flash.info    { background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.3); color:#93c5fd; }
+
+    /* STATS ROW */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    .stat-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+    .stat-label { font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+    .stat-val { font-family:var(--font-head); font-size:1.8rem; font-weight:800; }
+    .stat-val.free-col     { color:var(--free); }
+    .stat-val.standard-col { color:var(--standard); }
+    .stat-val.premium-col  { color:var(--premium); }
+    .stat-val.total-col    { color:var(--accent); }
+
+    /* TOOLBAR */
+    .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .search-box { flex:1; min-width:200px; position:relative; }
+    .search-box input { width:100%; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:9px 12px 9px 36px; color:var(--text); font-family:var(--font-body); font-size:0.85rem; outline:none; transition:border-color 0.2s; }
+    .search-box input:focus { border-color:var(--accent); }
+    .search-box input::placeholder { color:var(--muted); }
+    .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:0.9rem; pointer-events:none; }
+    .filter-select { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:9px 14px; color:var(--text); font-family:var(--font-body); font-size:0.85rem; outline:none; cursor:pointer; }
+    .filter-select:focus { border-color:var(--accent); }
+    .user-count { font-family:var(--font-mono); font-size:0.75rem; color:var(--muted); white-space:nowrap; }
+
+    /* TABLE */
+    .table-wrap { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .data-table { width:100%; border-collapse:collapse; }
+    .data-table thead th { font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); padding:12px 16px; text-align:left; border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; }
+    .data-table tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
+    .data-table tbody tr:last-child { border-bottom:none; }
+    .data-table tbody tr:hover { background:rgba(255,255,255,0.02); }
+    .data-table tbody td { padding:13px 16px; font-size:0.85rem; vertical-align:middle; }
+
+    /* User cell */
+    .user-cell { display:flex; align-items:center; gap:10px; }
+    .user-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:1rem; font-weight:800; flex-shrink:0; color:var(--bg); }
+    .user-name { font-weight:600; color:var(--text); }
+    .user-email { font-size:0.73rem; color:var(--muted); margin-top:1px; }
+
+    /* Badges */
+    .badge { display:inline-flex; align-items:center; gap:4px; border-radius:50px; padding:3px 10px; font-size:0.72rem; font-weight:700; letter-spacing:0.04em; white-space:nowrap; }
+    .badge-admin    { background:rgba(167,139,250,0.15); border:1px solid rgba(167,139,250,0.3); color:var(--purple); }
+    .badge-user     { background:rgba(107,114,128,0.15); border:1px solid rgba(107,114,128,0.3); color:var(--muted); }
+    .badge-active   { background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); color:var(--free); }
+    .badge-inactive { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:var(--danger); }
+    .plan-badge { display:inline-flex; align-items:center; gap:4px; border-radius:50px; padding:3px 10px; font-size:0.72rem; font-weight:700; }
+    .plan-free     { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:var(--free); }
+    .plan-standard { background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.3); color:var(--standard); }
+    .plan-premium  { background:rgba(244,162,97,0.12); border:1px solid rgba(244,162,97,0.3); color:var(--premium); }
+
+    /* Plan change form */
+    .plan-form { display:flex; align-items:center; gap:8px; }
+    .plan-select { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:5px 10px; color:var(--text); font-family:var(--font-mono); font-size:0.75rem; outline:none; cursor:pointer; }
+    .plan-select:focus { border-color:var(--accent); }
+    .btn-save { padding:5px 12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); border-radius:6px; color:var(--accent); font-size:0.75rem; font-weight:600; cursor:pointer; font-family:var(--font-body); transition:all 0.2s; }
+    .btn-save:hover { background:rgba(245,158,11,0.3); }
+
+    /* Action buttons */
+    .actions-cell { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .btn-action { display:inline-flex; align-items:center; gap:4px; padding:5px 11px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; border:1px solid; font-family:var(--font-body); transition:all 0.2s; text-decoration:none; }
+    .btn-activate   { background:rgba(34,197,94,0.1); border-color:rgba(34,197,94,0.3); color:var(--free); }
+    .btn-activate:hover { background:rgba(34,197,94,0.22); }
+    .btn-deactivate { background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.3); color:#fbbf24; }
+    .btn-deactivate:hover { background:rgba(251,191,36,0.22); }
+    .btn-admin-grant  { background:rgba(167,139,250,0.1); border-color:rgba(167,139,250,0.3); color:var(--purple); }
+    .btn-admin-grant:hover { background:rgba(167,139,250,0.22); }
+    .btn-admin-remove { background:rgba(107,114,128,0.1); border-color:rgba(107,114,128,0.3); color:var(--muted); }
+    .btn-admin-remove:hover { background:rgba(107,114,128,0.22); color:var(--text); }
+    .btn-delete { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.25); color:var(--danger); }
+    .btn-delete:hover { background:rgba(239,68,68,0.22); border-color:var(--danger); }
+
+    .date-cell { font-family:var(--font-mono); font-size:0.73rem; color:var(--muted); }
+    .you-tag { font-size:0.65rem; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--accent); border-radius:4px; padding:1px 6px; margin-left:4px; font-family:var(--font-mono); }
+
+    /* Empty */
+    .empty-state { text-align:center; padding:60px; color:var(--muted); }
+    .empty-state h3 { font-family:var(--font-head); font-size:1.5rem; color:var(--text); margin-bottom:8px; }
+
+    /* Delete confirm modal */
+    #del-modal { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.85); backdrop-filter:blur(16px); }
+    .del-inner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .del-card { background:var(--panel); border:1px solid rgba(239,68,68,0.35); border-radius:16px; padding:36px 32px; max-width:420px; width:100%; text-align:center; box-shadow:0 30px 60px rgba(0,0,0,0.7); }
+    .del-icon { font-size:2.5rem; margin-bottom:14px; }
+    .del-card h3 { font-family:var(--font-head); font-size:1.6rem; margin-bottom:8px; }
+    .del-card p { font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:28px; }
+    .del-actions { display:flex; gap:10px; justify-content:center; }
+    .btn-confirm-del { padding:11px 28px; background:var(--danger); border:none; border-radius:8px; color:#fff; font-weight:700; font-size:0.9rem; cursor:pointer; text-decoration:none; font-family:var(--font-body); transition:all 0.2s; }
+    .btn-confirm-del:hover { background:#dc2626; transform:translateY(-1px); }
+    .btn-cancel { padding:11px 24px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:0.9rem; cursor:pointer; font-family:var(--font-body); }
+    .btn-cancel:hover { color:var(--text); }
+
+    .btn-delete { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; color:var(--danger); font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.2s; text-decoration:none; font-family:var(--font-body); }
+    .btn-delete:hover { background:rgba(239,68,68,0.22); border-color:var(--danger); transform:translateY(-1px); }
+
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: #fff; flex-shrink: 0;
+    }
+.user-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+
+    @media(max-width:1024px) { .stats-row{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:900px) { .sidebar{display:none;} .main{margin-left:0; padding:24px 16px;} }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="wordmark">StreamVault</div>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">Admin Panel</span>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-pill">
+        <div class="admin-avatar">{{ user.username|first|upper }}</div>
+        {{ user.username }}
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <p class="sidebar-section-label">Navigation</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="/admin-dashboard/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-users/" class="active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>Manage Users
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-videos/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16"/>
+            </svg>Manage Videos
+          </a>
+        </li>
+        <li>
+          <a href="/admin-plans/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>Plan Management
+          </a>
+        </li>
+        <li>
+          <a href="/admin-category/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 6h16M4 12h16M4 18h10"/>
+            </svg>Categories
+          </a>
+        </li>
+      </ul>
+      <p class="sidebar-section-label">System</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/>
+            </svg>View Site
+          </a>
+        </li>
+        <li>
+          <a href="/logout/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+            Logout
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="page-head">
+        <h1>Manage Users</h1>
+      </div>
+
+      {% if messages %}
+        {% for msg in messages %}
+          <div class="flash {{ msg.tags }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-val total-col">{{ users|length }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Free Plan</div>
+          <div class="stat-val free-col">
+            {% with count=0 %}
+              {% for u in users %}{% if u.subscription.plan == 'free' or not u.subscription %}{% endif %}{% endfor %}
+            {% endwith %}
+            {{ users|length }}
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Standard Plan</div>
+          <div class="stat-val standard-col" id="std-count">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Premium Plan</div>
+          <div class="stat-val premium-col" id="prem-count">—</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search by username…"/>
+        </div>
+        <select class="filter-select" id="planFilter">
+          <option value="">All Plans</option>
+          <option value="free">Free</option>
+          <option value="standard">Standard</option>
+          <option value="premium">Premium</option>
+        </select>
+        <select class="filter-select" id="roleFilter">
+          <option value="">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+        <select class="filter-select" id="statusFilter">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <span class="user-count" id="userCount">{{ users|length }} user{{ users|length|pluralize }}</span>
+      </div>
+
+      <!-- Table -->
+      {% if users %}
+      <div class="table-wrap">
+        <table class="data-table" id="userTable">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>E-mail</th>
+              <th>Role</th>
+              <th>Current Plan</th>
+              <th>Change Plan</th>
+              <th>Joined</th>
+              <th>Admin Access</th>
+              <th>Delete Account</th>
+            </tr>
+          </thead>
+        <tbody>
+            {% for u in users %}
+            <tr data-username="{{ u.username|lower }}" data-email="{{ u.email|lower }}">
+              <td>
+                  <div class="user-cell">
+                      <div class="user-avatar" >
+                          {{ u.username|slice:":1"|upper }}
+                      </div>
+                      <div>
+                          <div class="user-name">
+                              {{ u.username }}
+                              {% if u == request.user %}<span style="font-size:0.65rem;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;border-radius:4px;padding:1px 6px;margin-left:4px;">YOU</span>{% endif %}
+                          </div>
+                      </div>
+                  </div>
+              </td>
+              <td>
+                  {% if u.email %}
+                      <span class="user-email" style="color:var(--muted);font-size:0.82rem;">{{ u.email }}</span>
+                  {% else %}
+                      <span style="color:rgba(255,255,255,0.2);font-size:0.78rem;font-style:italic;">No email set</span>
+                  {% endif %}
+              </td>
+                          <td>
+                    {% if u.is_staff %}
+                      Admin
+                    {% else %}
+                      User
+                    {% endif %}
+                </td>
+                <td>
+                  {% if u.subscription %}
+                    {{ u.subscription.plan|capfirst }}
+                  {% else %}
+                    Free
+                  {% endif %}
+                </td>
+                <td>
+                    <form method="POST" action="/admin-update-user/{{ u.id }}/">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_plan"/>
+                        <select name="plan" class="plan-select">
+                            <option value="free"     {% if u.subscription and u.subscription.plan == 'free' %}selected{% endif %}>Free</option>
+                            <option value="standard" {% if u.subscription and u.subscription.plan == 'standard' %}selected{% endif %}>Standard</option>
+                            <option value="premium"  {% if u.subscription and u.subscription.plan == 'premium' %}selected{% endif %}>Premium</option>
+                        </select>
+                        <button type="submit" class="btn-save">Update</button>
+                    </form>
+                </td>
+                <td class="date-cell">{{u.date_joined}}</td>
+                <td>
+                  <div>
+                    {% if u.is_staff %}
+                      <form method="POST" action="/admin-update-user/{{ u.id }}/">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_staff"/>
+                        <button type="submit" class="btn-save" {% if u.id == user.id %}disabled{% endif %}>
+                          Remove Admin
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="POST" action="/admin-update-user/{{ u.id }}/">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_staff"/>
+                        <button type="submit" class="btn-save" {% if u.id == user.id %}disabled{% endif %}>
+                          Grant Admin
+                        </button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                <button class="btn-delete"
+                  onclick="confirmDelete('{{ u.id }}','{{u.username|escapejs}}')">
+                  🗑 Delete
+                </button>
+              </td>
+            </tr>
+            {%endfor%}
+        </tbody>
+        </table>
+    </div>
+    {%endif%}
+    <div id="del-modal">
+    <div class="del-inner">
+      <div class="del-card">
+        <div class="del-icon">🗑️</div>
+        <h3>Delete User?</h3>
+        <p>You're about to permanently delete <strong id="del-title"></strong>. This cannot be undone.</p>
+        <div class="del-actions">
+          <form method="post" id="del-user-form" action="">
+            {%csrf_token%}
+            <input type="hidden" name="action" value="delete_user"/>
+            <button class="btn-confirm-del" type="submit">Confirm</button>
+          </form>
+          <button class="btn-save" onclick="document.getElementById('del-modal').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function confirmDelete(id, username) {
+      document.getElementById('del-title').textContent = '"' + username + '"';
+      document.getElementById('del-user-form').action = '/admin-update-user/' + id + '/';
+      document.getElementById('del-modal').style.display = 'block';
+    }
+    document.getElementById('del-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.getElementById('del-modal').style.display = 'none';
+    });
+  </script>
+</body>
+</html>

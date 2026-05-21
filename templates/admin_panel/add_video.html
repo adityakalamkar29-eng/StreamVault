@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamVault Admin — Add Video</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── TOKENS ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #08090d;
+      --surface:   #0f1117;
+      --panel:     #141720;
+      --border:    rgba(255,255,255,0.07);
+      --accent:    #f59e0b;
+      --accent2:   #fbbf24;
+      --danger:    #ef4444;
+      --success:   #22c55e;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'IBM Plex Sans', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --sidebar-w: 230px;
+      --nav-h:     60px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      display: flex; flex-direction: column;
+    }
+
+    /* ── TOPBAR ──────────────────────────────────────────── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+
+    .wordmark {
+      font-family: var(--font-head);
+      font-size: 1.15rem; font-weight: 800; letter-spacing: 0.06em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .topbar-divider { width: 1px; height: 20px; background: var(--border); }
+
+    .topbar-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    .btn-logout {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 6px; color: var(--danger);
+      font-size: 0.78rem; font-weight: 500;
+      text-decoration: none; transition: all 0.2s;
+    }
+
+    .btn-logout:hover { background: rgba(239,68,68,0.2); border-color: var(--danger); }
+
+    /* ── LAYOUT ──────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      margin-top: var(--nav-h);
+      min-height: calc(100vh - var(--nav-h));
+    }
+
+    /* ── SIDEBAR ─────────────────────────────────────────── */
+    .sidebar {
+      position: fixed;
+      top: var(--nav-h); left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--nav-h));
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 0; overflow-y: auto;
+    }
+
+    .sidebar-section-label {
+      font-family: var(--font-mono);
+      font-size: 0.62rem; letter-spacing: 0.18em;
+      color: var(--muted); text-transform: uppercase;
+      padding: 0 20px 8px;
+    }
+
+    .sidebar-nav { list-style: none; margin-bottom: 28px; }
+
+    .sidebar-nav li a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px; color: var(--muted);
+      text-decoration: none; font-size: 0.85rem; font-weight: 500;
+      border-left: 2px solid transparent; transition: all 0.18s;
+    }
+
+    .sidebar-nav li a:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+    .sidebar-nav li a.active {
+      color: var(--accent); border-left-color: var(--accent);
+      background: rgba(245,158,11,0.06);
+    }
+
+    .nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+
+    /* ── MAIN ────────────────────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1; padding: 36px 40px;
+    }
+
+    .page-head {
+      margin-bottom: 32px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+
+    .page-head h1 {
+      font-family: var(--font-head);
+      font-size: 2rem; font-weight: 800;
+    }
+
+    .page-head .breadcrumb {
+      font-family: var(--font-mono);
+      font-size: 0.72rem; color: var(--muted);
+    }
+
+    .page-head .breadcrumb a { color: var(--accent); text-decoration: none; }
+
+    /* ── FORM LAYOUT: two-col ─────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      animation: cardUp 0.4s ease both;
+    }
+
+    @keyframes cardUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Full-width within the grid */
+    .full-col { grid-column: 1 / -1; }
+
+    /* ── FORM CARD ───────────────────────────────────────── */
+    .form-section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 26px;
+      position: relative; overflow: hidden;
+    }
+
+    .form-section.full-col { grid-column: 1 / -1; }
+
+    /* Left stripe varies per section */
+    .form-section::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      border-radius: 12px 0 0 12px;
+      background: var(--accent);
+    }
+
+    .section-head {
+      font-family: var(--font-head);
+      font-size: 0.95rem; font-weight: 700;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .section-head .icon { font-size: 1rem; }
+
+    /* ── FIELD ───────────────────────────────────────────── */
+    .field { margin-bottom: 18px; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.68rem; letter-spacing: 0.14em;
+      color: var(--muted); text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field input[type="text"],
+    .field textarea,
+    .field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 16px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .field input[type="text"]::placeholder,
+    .field textarea::placeholder { color: var(--muted); }
+
+    .field input[type="text"]:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+    }
+
+    .field textarea {
+      resize: vertical; min-height: 90px; line-height: 1.6;
+    }
+
+    /* Style the native select */
+    .field select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+
+    .field select option { background: var(--panel); }
+
+    /* ── FILE UPLOAD ZONE ────────────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(245,158,11,0.04);
+    }
+
+    /* Hidden actual input */
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .upload-icon { font-size: 1.8rem; margin-bottom: 8px; opacity: 0.5; }
+
+    .upload-label {
+      font-size: 0.85rem; color: var(--muted); line-height: 1.5;
+    }
+
+    .upload-label strong { color: var(--accent); }
+
+    .upload-filename {
+      margin-top: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem; color: var(--success);
+      display: none;
+    }
+
+    /* ── SUBMIT BUTTON ───────────────────────────────────── */
+    .btn-submit {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 32px;
+      background: var(--accent);
+      color: #08090d;
+      font-family: var(--font-head);
+      font-size: 1rem; font-weight: 700; letter-spacing: 0.06em;
+      border: none; border-radius: 8px; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: var(--accent2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(245,158,11,0.42);
+    }
+
+    .btn-submit:active { transform: translateY(0); }
+
+    /* Progress bar (shows while uploading) */
+    .upload-progress {
+      display: none;
+      margin-top: 16px;
+      background: var(--border);
+      border-radius: 4px; height: 4px; overflow: hidden;
+    }
+
+    .upload-progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(to right, var(--accent), var(--accent2));
+      transition: width 0.3s;
+      border-radius: 4px;
+    }
+
+    /* Bottom action row */
+    .action-row {
+      display: flex; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-cancel {
+      padding: 13px 24px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 24px 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="wordmark">StreamVault</div>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">Admin Panel</span>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-pill">
+        <div class="admin-avatar">{{ user.username|first|upper }}</div>
+        {{ user.username }}
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <p class="sidebar-section-label">Navigation</p>
+      <ul class="sidebar-nav">
+       <li>
+          <a href="/admin-dashboard/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-users/" >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>Manage Users
+          </a>
+        </li>
+        <li>
+          <a href="/admin-manage-videos/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16"/>
+            </svg>Manage Videos
+          </a>
+        </li>
+        <li>
+          <a href="/admin-plans/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>Plan Management
+          </a>
+        </li>
+        <li>
+          <a href="/admin-category/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 6h16M4 12h16M4 18h10"/>
+            </svg>Categories
+          </a>
+        </li>
+      </ul>
+      <p class="sidebar-section-label">System</p>
+      <ul class="sidebar-nav">
+        <li>
+          <a href="/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/>
+            </svg>
+            View Site
+          </a>
+        </li>
+        <li>
+          <a href="/logout/">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+            </svg>
+            Logout
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="page-head">
+        <h1>Upload Video</h1>
+        <div class="breadcrumb">
+          <a href="/admin-dashboard/">Dashboard</a> / Add Video
+        </div>
+      </div>
+
+      <!-- The actual Django form — multipart for file uploads -->
+      <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+
+        <div class="form-grid">
+
+          <!-- ── Column 1: metadata ───────────────────────── -->
+          <div class="form-section">
+            <div class="section-head"><span class="icon">📝</span> Video Details</div>
+
+            <div class="field">
+              <label for="title">Title</label>
+              <input id="title" name="title" type="text"
+                     placeholder="Enter video title…" required/>
+            </div>
+
+            <div class="field">
+              <label for="description">Description</label>
+              <textarea id="description" name="description"
+                        placeholder="Brief description of the video…"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="category">Category</label>
+              <select id="category" name="category" required>
+                <option value="" disabled selected>Select a category…</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+                  <label>Required Plan</label>
+                  <select name="required_plan" class="form-control">
+                    <option value="free">Free — Anyone can watch</option>
+                    <option value="standard">Standard — Standard &amp; Premium subscribers</option>
+                    <option value="premium">Premium — Premium subscribers only</option>
+                  </select>
+            </div>
+          </div>
+        
+
+          <!-- ── Column 2: file uploads ──────────────────── -->
+          <div class="form-section">
+            <div class="section-head"><span class="icon">📁</span> Media Files</div>
+
+            <div class="field">
+              <label>Video File</label>
+              <div class="upload-zone" id="videoZone">
+                <input type="file" name="videos" accept="video/*"
+                       onchange="showFilename(this, 'videoName')" required/>
+                <div class="upload-icon">🎬</div>
+                <div class="upload-label">
+                  <strong>Click to upload</strong> or drag & drop<br>
+                  MP4, MKV, WebM — up to 2 GB
+                </div>
+                <div class="upload-filename" id="videoName"></div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Thumbnail Image</label>
+              <div class="upload-zone" id="thumbZone">
+                <input type="file" name="thumbnail" accept="image/*"
+                       onchange="showFilename(this, 'thumbName'); previewThumb(this)"/>
+                <div class="upload-icon" id="thumbIcon">🖼️</div>
+                <div class="upload-label" id="thumbLabel">
+                  <strong>Click to upload</strong> or drag & drop<br>
+                  JPG, PNG, WebP recommended
+                </div>
+                <div class="upload-filename" id="thumbName"></div>
+              </div>
+              <!-- Thumbnail preview -->
+              <img id="thumbPreview"
+                   style="display:none; margin-top:10px; width:100%; border-radius:8px;
+                          max-height:160px; object-fit:cover; border:1px solid var(--border);"
+                   alt="Thumbnail preview"/>
+            </div>
+          </div>
+
+          <!-- ── Submit row ───────────────────────────────── -->
+          <div class="full-col">
+            <div class="action-row">
+              <button type="submit" class="btn-submit">🚀 Upload Video</button>
+              <a href="/admin-dashboard/" class="btn-cancel">Cancel</a>
+            </div>
+            <div class="upload-progress" id="progress">
+              <div class="upload-progress-bar" id="progressBar"></div>
+            </div>
+          </div>
+
+        </div><!-- /.form-grid -->
+
+</form>
+
+    </main>
+  </div>
+
+  <script>
+    // Show selected filename below the upload zone
+    function showFilename(input, labelId) {
+      const el = document.getElementById(labelId);
+      if (input.files && input.files[0]) {
+        el.textContent = '✓ ' + input.files[0].name;
+        el.style.display = 'block';
+      }
+    }
+
+    // Show a live thumbnail preview when an image is chosen
+    function previewThumb(input) {
+      if (!input.files || !input.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('thumbPreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.getElementById('thumbIcon').style.display = 'none';
+        document.getElementById('thumbLabel').style.display = 'none';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    // Drag-and-drop highlight for upload zones
+    document.querySelectorAll('.upload-zone').forEach(zone => {
+      zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) =>{
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const droppedFiles=e.dataTransfer.files;
+        const fileinput = zone.querySelector('input[type="file"]');
+        if(droppedFiles.length>0 && fileinput){
+          fileinput.files=droppedFiles;
+
+          if(fileinput.name=='videos'){
+            showFilename(fileinput,'videoName');
+          }else if(fileinput.name=='thumbnail'){
+            previewThumb(fileinput);
+          }
+        }
+      });
+    });
+
+    // Fake progress bar on submit (real progress needs XHR — wire up if needed)
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+      const bar = document.getElementById('progressBar');
+      const wrap = document.getElementById('progress');
+      wrap.style.display = 'block';
+      let pct = 0;
+      const iv = setInterval(() => {
+        pct = Math.min(pct + Math.random() * 8, 92);
+        bar.style.width = pct + '%';
+        if (pct >= 92) clearInterval(iv);
+      }, 200);
+    });
+  </script>
+</body>
+</html>

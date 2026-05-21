@@ -1,0 +1,593 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StreamVault — {{ cat.name }}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #060810;
+        --surface: #0e1120;
+        --glass: rgba(255, 255, 255, 0.04);
+        --border: rgba(255, 255, 255, 0.08);
+        --accent: #e63946;
+        --accent2: #ff6b6b;
+        --gold: #f4a261;
+        --text: #f0f0f0;
+        --muted: #8a8fa8;
+        --nav-h: 72px;
+        --font-head: "Bebas Neue", sans-serif;
+        --font-body: "DM Sans", sans-serif;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        min-height: 100vh;
+      }
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 48px;
+        background: rgba(6, 8, 16, 0.95);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .logo {
+        font-family: var(--font-head);
+        font-size: 2rem;
+        letter-spacing: 0.12em;
+        background: linear-gradient(135deg, var(--accent), var(--gold));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-decoration: none;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-links a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 8px 18px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        transition: all 0.25s;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+        border-color: var(--border);
+        background: var(--glass);
+      }
+      .nav-links .btn-logout {
+        color: var(--muted);
+        border-color: var(--border);
+      }
+
+      .page-content {
+        padding: calc(var(--nav-h) + 48px) 48px 80px;
+      }
+      .page-header {
+        margin-bottom: 40px;
+      }
+      .breadcrumb {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+      .breadcrumb a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .page-header h1 {
+        font-family: var(--font-head);
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        letter-spacing: 0.06em;
+      }
+      .page-header p {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 8px;
+      }
+
+      /* Upgrade modal */
+      #upgrade-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(20px);
+      }
+      .upgrade-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .upgrade-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 40px 36px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+      }
+      .upgrade-card h3 {
+        font-family: var(--font-head);
+        font-size: 2rem;
+        letter-spacing: 0.06em;
+        margin-bottom: 10px;
+      }
+      .upgrade-card p {
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.7;
+        margin-bottom: 28px;
+      }
+      .upgrade-btn {
+        display: inline-block;
+        padding: 13px 32px;
+        background: linear-gradient(135deg, #92400e, var(--gold));
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border-radius: 10px;
+        text-decoration: none;
+        margin-right: 8px;
+        transition: all 0.25s;
+      }
+      .upgrade-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 28px rgba(244, 162, 97, 0.45);
+      }
+      .locked-card { cursor: pointer; }
+      .locked-card:hover { transform: scale(1.05) translateY(-6px); box-shadow: 0 20px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(244,162,97,0.5); }
+      .lock-overlay { position: absolute; inset: 0 0 36px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+      .lock-icon { font-size: 2rem; }
+      .lock-plan { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 50px; background: rgba(244,162,97,0.2); border: 1px solid rgba(244,162,97,0.4); color: var(--gold); }
+      .lock-cta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+      
+      .upgrade-dismiss {
+        display: inline-block;
+        padding: 13px 24px;
+        background: var(--glass);
+        color: var(--muted);
+        font-size: 0.88rem;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .upgrade-dismiss:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .close-upgrade {
+        position: absolute;
+        top: 16px;
+        right: 18px;
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 1.3rem;
+        cursor: pointer;
+      }
+
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 20px;
+      }
+      .card {
+        border-radius: 10px;
+        overflow: hidden;
+        cursor: pointer;
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        transition:
+          transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+          box-shadow 0.3s;
+      }
+      .card:hover {
+        transform: scale(1.05) translateY(-6px);
+        box-shadow:
+          0 20px 48px rgba(0, 0, 0, 0.7),
+          0 0 0 1px var(--accent);
+      }
+      .card img {
+        width: 100%;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+        display: block;
+      }
+      .card-info {
+        padding: 10px 12px;
+      }
+      .card-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(6, 8, 16, 0.95) 0%,
+          transparent 50%
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+        display: flex;
+        align-items: flex-end;
+        padding: 14px;
+      }
+      .card:hover .card-overlay {
+        opacity: 1;
+      }
+      .card-play {
+        width: 38px;
+        height: 38px;
+        background: var(--accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
+      }
+      .card-play svg {
+        width: 14px;
+        height: 14px;
+        fill: #fff;
+        margin-left: 2px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 0;
+        color: var(--muted);
+      }
+      .empty-state h2 {
+        font-family: var(--font-head);
+        font-size: 2rem;
+        margin-bottom: 12px;
+      }
+
+      /* Sidebar category nav */
+      .layout {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+      }
+      .sidebar {
+        width: 220px;
+        flex-shrink: 0;
+      }
+      .sidebar h3 {
+        font-family: var(--font-head);
+        font-size: 1.1rem;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+      .sidebar a {
+        display: block;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-decoration: none;
+        margin-bottom: 4px;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+      }
+      .sidebar a:hover,
+      .sidebar a.active {
+        color: var(--text);
+        background: var(--glass);
+        border-color: var(--border);
+      }
+      .sidebar a.active {
+        color: var(--accent);
+        border-color: rgba(230, 57, 70, 0.3);
+      }
+      .main-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      #modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(20px);
+      }
+      .modal-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .modal-close {
+        position: absolute;
+        top: 24px;
+        right: 28px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 1.3rem;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      #player {
+        width: 100%;
+        max-width: 1000px;
+        max-height: 80vh;
+        border-radius: 12px;
+        background: #000;
+        outline: none;
+      }
+
+      @media (max-width: 768px) {
+        .navbar {
+          padding: 0 20px;
+        }
+        .page-content {
+          padding: calc(var(--nav-h)+28px) 20px 60px;
+        }
+        .layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="/" class="logo">StreamVault</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        {% if user.is_authenticated %}
+        <a href="/logout/" class="btn-logout">Sign Out</a>
+        {% endif %}
+      </div>
+    </nav>
+
+    <div class="page-content">
+      <div class="page-header">
+        <div class="breadcrumb"><a href="/">Home</a> / {{ cat.name }}</div>
+        <h1>{{ cat.name }}</h1>
+        <p>{{ videos.count }} video{{ videos.count|pluralize }} available</p>
+      </div>
+
+      <div class="layout">
+        <!-- Category sidebar -->
+        <aside class="sidebar">
+          <h3>Categories</h3>
+          {% for c in categories %}
+          <a href="/category/{{ c.id }}/"{% if c.id == cat.id %} class="active"{% endif %}>
+            {{c.name}}
+          </a>
+          {% endfor %}
+        </aside>
+
+        <!-- Video grid -->
+        <div class="main-content">
+          {% if videos %}
+          <div class="video-grid">
+            {% for v in videos %}
+              {% if sub.plan == 'premium' %}
+                {# Premium user — play everything #}
+                <div class="card" onclick="playVideo('{{ v.video_file.url }}')">
+                  {% if v.thumbnail %}
+                    <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}" loading="lazy">
+                  {% else %}
+                    <div style="width:100%;aspect-ratio:2/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:2rem;">🎬</div>
+                  {% endif %}
+                  <div class="card-overlay">
+                    <div class="card-play"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
+                  </div>
+                  <div class="card-info"><div class="card-title">{{ v.title }}</div></div>
+                </div>
+
+              {% elif sub.plan == 'standard' %}
+                {# Standard user — play free + standard, lock premium #}
+                {% if v.required_plan == 'premium' %}
+                  <div class="card locked-card" onclick="showUpgrade('premium')">
+                    {% if v.thumbnail %}
+                      <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}" loading="lazy" style="filter:brightness(0.35) blur(1px)">
+                    {% else %}
+                      <div style="width:100%;aspect-ratio:2/3;background:var(--surface);filter:brightness(0.35)"></div>
+                    {% endif %}
+                    <div class="lock-overlay">
+                      <div class="lock-icon">🔒</div>
+                      <div class="lock-plan">👑 Premium</div>
+                      <div class="lock-cta">Upgrade to Watch</div>
+                    </div>
+                    <div class="card-info"><div class="card-title" style="color:var(--muted);">{{ v.title }}</div></div>
+                  </div>
+                {% else %}
+                  <div class="card" onclick="playVideo('{{ v.video_file.url }}')">
+                    {% if v.thumbnail %}
+                      <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}" loading="lazy">
+                    {% else %}
+                      <div style="width:100%;aspect-ratio:2/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:2rem;">🎬</div>
+                    {% endif %}
+                    <div class="card-overlay">
+                      <div class="card-play"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
+                    </div>
+                    <div class="card-info"><div class="card-title">{{ v.title }}</div></div>
+                  </div>
+                {% endif %}
+
+              {% else %}
+                {# Free user — play only free videos, lock standard + premium #}
+                {% if v.required_plan == 'free' %}
+                  <div class="card" onclick="playVideo('{{ v.video_file.url }}')">
+                    {% if v.thumbnail %}
+                      <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}" loading="lazy">
+                    {% else %}
+                      <div style="width:100%;aspect-ratio:2/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:2rem;">🎬</div>
+                    {% endif %}
+                    <div class="card-overlay">
+                      <div class="card-play"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
+                    </div>
+                    <div class="card-info"><div class="card-title">{{ v.title }}</div></div>
+                  </div>
+                {% else %}
+                  <div class="card locked-card" onclick="showUpgrade('{{ v.required_plan }}')">
+                    {% if v.thumbnail %}
+                      <img src="{{ v.thumbnail.url }}" alt="{{ v.title }}" loading="lazy" style="filter:brightness(0.35) blur(1px)">
+                    {% else %}
+                      <div style="width:100%;aspect-ratio:2/3;background:var(--surface);filter:brightness(0.35)"></div>
+                    {% endif %}
+                    <div class="lock-overlay">
+                      <div class="lock-icon">🔒</div>
+                      <div class="lock-plan">{% if v.required_plan == 'premium' %}👑 Premium{% else %}🚀 Standard{% endif %}</div>
+                      <div class="lock-cta">Upgrade to Watch</div>
+                    </div>
+                    <div class="card-info"><div class="card-title" style="color:var(--muted);">{{ v.title }}</div></div>
+                  </div>
+                {% endif %}
+              {% endif %}
+
+            {% empty %}
+              <p style="color:var(--muted);font-size:0.85rem;">No videos in this category yet.</p>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <h2>No videos yet</h2>
+            <p>Check back soon — content is being added.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div id="modal">
+      <div class="modal-inner">
+        <button class="modal-close" onclick="closeVideo()">✕</button>
+        <video id="player" controls></video>
+      </div>
+    </div>
+
+    <!-- UPGRADE MODAL -->
+    <div id="upgrade-modal">
+      <div class="upgrade-inner">
+        <div class="upgrade-card">
+          <button class="close-upgrade" onclick="closeUpgrade()">✕</button>
+          <div style="font-size: 2.5rem; margin-bottom: 12px" id="upgrade-icon">🔒</div>
+          <h3 id="upgrade-title">Upgrade Required</h3>
+          <p id="upgrade-desc">This content is locked. Upgrade to unlock.</p>
+          <a href="/pricing/" class="upgrade-btn">View Plans</a>
+          <span class="upgrade-dismiss" onclick="closeUpgrade()">Maybe Later</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function playVideo(src) {
+        document.getElementById("modal").style.display = "block";
+        const p = document.getElementById("player");
+        p.src = src;
+        p.play();
+        document.body.style.overflow = "hidden";
+      }
+      function closeVideo() {
+        const p = document.getElementById("player");
+        p.pause();
+        p.src = "";
+        document.getElementById("modal").style.display = "none";
+        document.body.style.overflow = "";
+      }
+      document.getElementById("modal").addEventListener("click", function (e) {
+        if (e.target === this) closeVideo();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeVideo();
+      });
+
+      function showUpgrade(plan) {
+        const modal = document.getElementById('upgrade-modal');
+        const icon = document.getElementById('upgrade-icon');
+        const title = document.getElementById('upgrade-title');
+        const desc = document.getElementById('upgrade-desc');
+
+        if (plan === 'premium') {
+          icon.textContent = '🔑';
+          title.textContent = 'Premium Content';
+          desc.textContent = 'This video requires a Premium plan. Upgrade to unlock Premium features.';
+        } else {
+          icon.textContent = '🔒';
+          title.textContent = 'Standard Content';
+          desc.textContent = 'This video requires a Standard plan. Upgrade to unlock Standard features.';
+        }
+
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      }
+
+      document.getElementById('upgrade-modal').addEventListener('click', function (e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+          document.body.style.overflow = '';
+        }
+      });
+
+      function closeUpgrade() {
+        document.getElementById('upgrade-modal').style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    </script>
+  </body>
+</html>

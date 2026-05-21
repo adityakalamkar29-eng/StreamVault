@@ -1,0 +1,113 @@
+<div>
+        <div class="section-label">Choose Payment Method</div>
+        <div class="method-tabs">
+          <button class="method-tab active" onclick="switchMethod('card', this)">
+            <span class="tab-icon">💳</span> Credit / Debit
+          </button>
+          <button class="method-tab" onclick="switchMethod('upi', this)">
+            <span class="tab-icon">📲</span> UPI
+          </button>
+          <button class="method-tab" onclick="switchMethod('netbanking', this)">
+            <span class="tab-icon">🏦</span> Net Banking
+          </button>
+        </div>
+      </div>
+
+      <!-- ── CARD PANEL ── -->
+      <div id="panel-card" class="form-card">
+        <!-- Live card preview -->
+        <div class="card-visual">
+          <div class="card-chip"></div>
+          <div class="card-bottom">
+            <div class="card-number" id="previewNum">•••• •••• •••• ••••</div>
+            <div class="card-meta">
+              <div>
+                <div class="card-meta-item"><span class="lbl">Card Holder</span><span class="val" id="previewName">YOUR NAME</span></div>
+              </div>
+              <div class="card-meta-item"><span class="lbl">Expires</span><span class="val" id="previewExp">MM/YY</span></div>
+              <div class="card-brand" id="previewBrand">VISA</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Card Number</label>
+          <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19"
+                 oninput="formatCard(this)" autocomplete="cc-number"/>
+        </div>
+        <div class="field">
+          <label>Cardholder Name</label>
+          <input type="text" id="cardName" placeholder="As printed on card"
+                 oninput="document.getElementById('previewName').textContent = this.value.toUpperCase() || 'YOUR NAME'"
+                 autocomplete="cc-name"/>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label>Expiry Date</label>
+            <input type="text" id="cardExp" placeholder="MM / YY" maxlength="7"
+                   oninput="formatExpiry(this)" autocomplete="cc-exp"/>
+          </div>
+          <div class="field">
+            <label>CVV / CVC</label>
+            <input type="password" id="cardCvv" placeholder="•••" maxlength="4"
+                   autocomplete="cc-csc"/>
+          </div>
+        </div>
+        <button class="btn-pay" onclick="processPayment()">
+          <span class="lock">🔒</span> Pay ₹<span id="payAmountCard">0</span> Securely
+        </button>
+        <div class="security-note">🔒 Your payment is encrypted and secure. We never store card details.</div>
+      </div>
+
+      <!-- ── UPI PANEL ── -->
+      <div id="panel-upi" class="form-card" style="display:none">
+        <div class="upi-panel">
+          <div class="upi-logo">💳</div>
+          <div class="upi-title">Pay via UPI ID</div>
+          <div class="field" style="text-align:left">
+            <label>Enter UPI ID</label>
+            <div class="upi-input-wrap">
+              <input type="text" id="upiId" placeholder="yourname@upi" style="padding-right:60px"/>
+            </div>
+          </div>
+          <div class="upi-apps">
+            <div class="upi-app" onclick="setUpiApp('GPay')"><span class="app-icon">🟢</span>Google Pay</div>
+            <div class="upi-app" onclick="setUpiApp('PhonePe')"><span class="app-icon">🟣</span>PhonePe</div>
+            <div class="upi-app" onclick="setUpiApp('Paytm')"><span class="app-icon">🔵</span>Paytm</div>
+            <div class="upi-app" onclick="setUpiApp('BHIM')"><span class="app-icon">🟠</span>BHIM</div>
+          </div>
+        </div>
+        <button class="btn-pay" style="margin-top:20px" onclick="processPayment()">
+          <span class="lock">🔒</span> Pay ₹<span id="payAmountUpi">0</span> via UPI
+        </button>
+        <div class="security-note">A payment request will be sent to your UPI app for confirmation.</div>
+      </div>
+
+      <!-- ── NET BANKING PANEL ── -->
+      <div id="panel-netbanking" class="form-card" style="display:none">
+        <div class="section-label" style="margin-bottom:12px">Select Your Bank</div>
+        <div class="banks-grid" id="banksGrid">
+          <div class="bank-card" onclick="selectBank(this,'SBI')"><span class="bank-icon">🏛</span>State Bank of India</div>
+          <div class="bank-card" onclick="selectBank(this,'HDFC')"><span class="bank-icon">🏦</span>HDFC Bank</div>
+          <div class="bank-card" onclick="selectBank(this,'ICICI')"><span class="bank-icon">🏪</span>ICICI Bank</div>
+          <div class="bank-card" onclick="selectBank(this,'Axis')"><span class="bank-icon">🏢</span>Axis Bank</div>
+          <div class="bank-card" onclick="selectBank(this,'Kotak')"><span class="bank-icon">🏬</span>Kotak Mahindra</div>
+          <div class="bank-card" onclick="selectBank(this,'PNB')"><span class="bank-icon">🏩</span>Punjab National</div>
+        </div>
+        <div class="field bank-other">
+          <label>Other Bank</label>
+          <select id="otherBank">
+            <option value="">-- Select bank --</option>
+            <option>Bank of Baroda</option>
+            <option>Canara Bank</option>
+            <option>Union Bank</option>
+            <option>IndusInd Bank</option>
+            <option>Yes Bank</option>
+            <option>Federal Bank</option>
+          </select>
+        </div>
+        <button class="btn-pay" onclick="processPayment()">
+          <span class="lock">🔒</span> Pay ₹<span id="payAmountNB">0</span> via Net Banking
+        </button>
+        <div class="security-note">You will be redirected to your bank's secure page.</div>
+      </div>
