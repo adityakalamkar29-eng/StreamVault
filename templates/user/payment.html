@@ -29,7 +29,7 @@
     /* Navbar */
     .navbar { position:relative; z-index:10; height:66px; display:flex; align-items:center; justify-content:space-between; padding:0 40px; border-bottom:1px solid var(--border); }
     .logo { font-family:var(--font-head); font-size:1.6rem; letter-spacing:0.12em; background:linear-gradient(135deg,var(--accent),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-decoration:none; }
-    .secure-badge { display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--green); background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); border-radius:20px; padding:5px 12px; }
+    .secure-badge { display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--green); background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); border-radius:20px; padding:5px 5px; }
 
     /* Layout */
     .page { position:relative; z-index:5; max-width:1000px; margin:0 auto; padding:40px 24px 60px; display:grid; grid-template-columns:1fr 380px; gap:32px; }
@@ -161,6 +161,32 @@
     .step-line.done { color:var(--green); }
     .step-line .dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
 
+     .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-links a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 8px 18px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        transition: all 0.25s;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+        border-color: var(--border);
+        background: var(--glass);
+      }
+      .nav-links .active {
+        color: var(--text);
+        background: var(--glass);
+        border-color: var(--border);
+      }
+
     /* Success screen */
     .success-screen { position:fixed; inset:0; z-index:101; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; opacity:0; pointer-events:none; transition:opacity 0.5s; }
     .success-screen.show { opacity:1; pointer-events:all; }
@@ -178,8 +204,13 @@
 
   <!-- Navbar -->
   <nav class="navbar">
-    <a href="{% url 'pricing' %}" class="logo">StreamVault</a>
-    <div class="secure-badge">🔒 256-bit SSL Encrypted</div>
+    <a href="/" class="logo">StreamVault</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/pricing/" class="active">Plans</a>
+        <div class="secure-badge">🔒 256-bit SSL Encrypted</div>
+      </div>
+    
   </nav>
 
   <div class ="page">
